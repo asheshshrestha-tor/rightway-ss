@@ -1,8 +1,11 @@
 """Emails for the consultation flow.
 
-Three moments matter to the participant: the request landing, the office
-hearing about it, and the time being confirmed. Failures are logged rather than
-raised - a mail outage must not lose a booking that is already in the database.
+Two moments matter to the participant: the request landing, and the time
+being confirmed. Telling the office is handled by `pages.notifications`, which
+sends the same shape of message for every form on the site.
+
+Failures are logged rather than raised - a mail outage must not lose a booking
+that is already in the database.
 """
 
 import logging
@@ -65,37 +68,6 @@ def acknowledge(consultation):
         f"We've received your consultation request ({consultation.reference})",
         body,
         [consultation.email],
-    )
-
-
-def notify_office(consultation):
-    body = "\n".join(
-        [
-            f"Reference: {consultation.reference}",
-            f"Name: {consultation.full_name}",
-            f"For: {consultation.for_whom} ({consultation.get_enquirer_type_display()})",
-            f"Email: {consultation.email}",
-            f"Phone: {consultation.phone}",
-            f"NDIS plan: {consultation.get_plan_status_display()}",
-            f"Where: {consultation.location_line}",
-            f"Preferred: {consultation.preference_line}",
-            "",
-            "Interested in: "
-            + (
-                ", ".join(s.title for s in consultation.services.all())
-                or "not specified"
-            ),
-            "",
-            consultation.goals or "(no notes provided)",
-            "",
-            "Confirm a time in the dashboard.",
-        ]
-    )
-    return _send(
-        f"Consultation request: {consultation.full_name} ({consultation.reference})",
-        body,
-        [office_email()],
-        reply_to=[consultation.email],
     )
 
 

@@ -59,11 +59,17 @@ class ContactFormTests(TestCase):
     }
 
     def test_valid_submission_emails_and_redirects(self):
+        """Two emails: staff are notified, and the sender is told it arrived."""
         response = self.client.post(reverse("contact"), self.payload)
         self.assertRedirects(response, reverse("contact"))
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("Jamie Reid", mail.outbox[0].body)
-        self.assertEqual(mail.outbox[0].reply_to, ["jamie@example.com"])
+        self.assertEqual(len(mail.outbox), 2)
+
+        notification = next(m for m in mail.outbox if "Jamie Reid" in m.subject)
+        self.assertIn("Jamie Reid", notification.body)
+        self.assertEqual(notification.reply_to, ["jamie@example.com"])
+
+        confirmation = next(m for m in mail.outbox if m.to == ["jamie@example.com"])
+        self.assertIn("received your message", confirmation.subject)
 
     def test_invalid_submission_redisplays_errors(self):
         response = self.client.post(reverse("contact"), {**self.payload, "email": "nope"})

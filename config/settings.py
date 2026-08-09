@@ -201,6 +201,21 @@ DEFAULT_FROM_EMAIL = env(
 CONTACT_EMAIL = env("CONTACT_EMAIL", default="arshdeep@rightwaysupportservices.com.au")
 CONSULTATION_PHONE = env("CONSULTATION_PHONE", default="0470 522 587")
 
+# Who hears about a submission is worked out from dashboard permissions - see
+# pages.notifications.recipients - so staff receive what they can act on
+# without anything being listed here. This is only for addresses that have no
+# staff account, such as a developer watching submissions during testing.
+ADMIN_NOTIFICATION_EMAILS = env.list("ADMIN_NOTIFICATION_EMAILS", default=[])
+
+# Testing safety net. With this set, every outgoing email goes to these
+# addresses instead of the real ones, with the intended recipients written into
+# the subject and body. The site still works out who *would* have received it,
+# so the routing under test is the real thing. Leave empty in production.
+EMAIL_REDIRECT_TO = env.list("EMAIL_REDIRECT_TO", default=[])
+if EMAIL_REDIRECT_TO:
+    EMAIL_REDIRECT_WRAPPED_BACKEND = EMAIL_BACKEND
+    EMAIL_BACKEND = "config.email_backend.RedirectingEmailBackend"
+
 # --- HTTPS -----------------------------------------------------------------
 # Off by default so local development over http keeps working; turn on in the
 # production .env once TLS is terminating in front of the app.

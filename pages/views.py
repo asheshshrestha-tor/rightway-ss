@@ -2,12 +2,12 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.core.mail import EmailMessage
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from . import content
 from . import consultation_mail
+from . import notifications
 from . import structured_data
 from .forms import ApplicationForm, ConsultationForm, ContactForm
 from .models import Consultation, Enquiry, Service, SiteSettings, TeamMember, Vacancy
@@ -158,7 +158,7 @@ def _application_page(request, *, vacancy, template, extra):
             application.vacancy = vacancy
             application.vacancy_title = vacancy.title if vacancy else ""
             application.save()
-            _notify_application(application)
+            notifications.application_received(request, application)
             messages.success(
                 request,
                 "Thank you for applying. We'll be in touch about the next steps.",
@@ -173,40 +173,12 @@ def _application_page(request, *, vacancy, template, extra):
     return render(request, template, {"vacancy": vacancy, "form": form, **extra})
 
 
-def _notify_application(application):
-    """Tell the office an application arrived. The resume is not attached -
-    it stays in private storage and is read from the dashboard."""
-    body = "\n".join(
-        [
-            f"Role: {application.role_label}",
-            f"Name: {application.full_name}",
-            f"Email: {application.email}",
-            f"Phone: {application.phone or '-'}",
-            "",
-            application.cover_letter or "(no cover letter)",
-            "",
-            f"Resume: {application.resume_name} - open it in the dashboard.",
-        ]
-    )
-    email = EmailMessage(
-        subject=f"Job application: {application.role_label}",
-        body=body,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[consultation_mail.office_email()],
-        reply_to=[application.email],
-    )
-    try:
-        email.send(fail_silently=False)
-    except Exception:  # pragma: no cover - depends on mail server availability
-        logger.exception("Application notification could not be emailed:\n%s", body)
-
-
 def contact(request):
     if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():
             spam = form.is_probably_spam()
-            Enquiry.objects.create(
+            enquiry = Enquiry.objects.create(
                 name=form.cleaned_data["name"],
                 email=form.cleaned_data["email"],
                 phone=form.cleaned_data["phone"],
@@ -217,7 +189,7 @@ def contact(request):
             # gets a normal confirmation, but we do not relay it by email.
             # Staff can review suspected spam in the dashboard.
             if not spam:
-                _send_enquiry(form.cleaned_data)
+                notifications.enquiry_received(request, enquiry)
             else:
                 logger.info("Contact form honeypot tripped by %s", form.cleaned_data["email"])
 
@@ -249,7 +221,7 @@ def consultation(request):
         if form.is_valid():
             booking = form.save()
             consultation_mail.acknowledge(booking)
-            consultation_mail.notify_office(booking)
+            notifications.consultation_requested(request, booking)
             request.session["consultation_reference"] = booking.reference
             return redirect("consultation_booked")
         messages.error(request, "Please check the highlighted fields and try again.")
@@ -312,26 +284,3 @@ def terms(request):
     )
 
 
-def _send_enquiry(data):
-    """Email the enquiry to the site inbox.
-
-    With the default console email backend this simply prints the message, so
-    the form is usable before SMTP credentials are configured.
-    """
-    body = (
-        f"Name: {data['name']}\n"
-        f"Email: {data['email']}\n"
-        f"Phone: {data['phone'] or '-'}\n\n"
-        f"{data['message']}\n"
-    )
-    email = EmailMessage(
-        subject=f"Website enquiry from {data['name']}",
-        body=body,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[consultation_mail.office_email()],
-        reply_to=[data["email"]],
-    )
-    try:
-        email.send(fail_silently=False)
-    except Exception:  # pragma: no cover - depends on mail server availability
-        logger.exception("Contact enquiry could not be emailed; body was:\n%s", body)

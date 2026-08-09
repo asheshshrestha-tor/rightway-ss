@@ -266,6 +266,22 @@ Consumer Gmail will rate-limit and eventually block this.
 
 Test it by submitting the contact form and confirming the mail arrives.
 
+Every enquiry, job application and consultation request sends two emails: a
+notification to the staff who can act on it, with a button through to the
+record, and a confirmation to the person who submitted it. Until SMTP is
+configured both are printed to the service log and delivered nowhere.
+
+Check the routing before trusting it:
+
+```bash
+python manage.py test_notifications
+```
+
+To test on a live site without emailing the client or a real applicant, set
+`EMAIL_REDIRECT_TO=you@example.com`. Every message then goes to you instead,
+with the intended recipients written into the subject line. Remove it when
+you are done - with it set, nobody receives anything.
+
 ## 10. Check it
 
 Open the generated domain and confirm:

@@ -1,0 +1,10 @@
+Hi {{ greeting }},
+{% for paragraph in paragraphs %}
+{{ paragraph }}
+{% endfor %}{% if rows %}{% for label, value in rows %}
+{{ label }}: {{ value }}{% endfor %}
+{% endif %}
+Kind regards,
+{{ site.name }}
+{% if phone %}{{ phone }}{% endif %}{% if site.email %} | {{ site.email }}{% endif %}
+{% if site.address %}{{ site.address }}{% endif %}

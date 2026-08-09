@@ -1,0 +1,82 @@
+{% comment %}
+Email HTML is not web HTML. Tables for layout and inline styles, because
+Gmail strips <style> blocks, Outlook renders through Word's engine, and neither
+supports flexbox or grid. It looks dated on purpose - this is what survives.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ heading }}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f5f7; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">{{ summary }}</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f5f7; padding:24px 12px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:600px; background-color:#ffffff; border-radius:8px; overflow:hidden;">
+
+                    <tr>
+                        <td style="background-color:#166534; padding:24px 32px;">
+                            <p style="margin:0; color:#ffffff; font-size:18px; font-weight:600;">{{ heading }}</p>
+                            <p style="margin:4px 0 0; color:#bbf7d0; font-size:13px;">{{ site.name }}</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:28px 32px 8px;">
+                            <p style="margin:0 0 20px; color:#374151; font-size:15px; line-height:1.5;">{{ summary }}</p>
+
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                {% for label, value in rows %}
+                                    <tr>
+                                        <td style="padding:8px 0; border-bottom:1px solid #eef0f3; color:#6b7280; font-size:13px; width:140px; vertical-align:top;">{{ label }}</td>
+                                        <td style="padding:8px 0; border-bottom:1px solid #eef0f3; color:#111827; font-size:14px; vertical-align:top; white-space:pre-line;">{{ value }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:24px 32px 32px;" align="center">
+                            {% comment %}
+                            Belt and braces: the padded <a> is the button in
+                            every client, and the surrounding table gives
+                            Outlook something it can size correctly.
+                            {% endcomment %}
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td style="background-color:#166534; border-radius:6px;">
+                                        <a href="{{ action_url }}"
+                                           style="display:inline-block; padding:13px 28px; color:#ffffff; font-size:15px; font-weight:600; text-decoration:none;">
+                                            {{ action_label }} &rarr;
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin:14px 0 0; color:#9ca3af; font-size:12px;">
+                                You will be asked to sign in to the dashboard first.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="background-color:#f9fafb; padding:18px 32px; border-top:1px solid #eef0f3;">
+                            <p style="margin:0; color:#9ca3af; font-size:12px; line-height:1.5;">
+                                Sent automatically by the {{ site.name }} website.
+                                Replying to this email reaches the person who submitted the form.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+{{ heading|upper }}
+{{ summary }}
+{% for label, value in rows %}
+{{ label }}: {{ value }}{% endfor %}
+
+{{ action_label }}:
+{{ action_url }}
+
+--
+Sent automatically by the {{ site.name }} website.
+Replying to this email reaches the person who submitted the form.

@@ -527,6 +527,22 @@ through `{{ ...|json_script }}` rather than inline interpolation.
 **Licensing:** Metronic is commercial software from KeenThemes. Using it in a
 delivered project needs a valid license purchased from ThemeForest.
 
+## Email
+
+Every public form sends a notification to the staff who can act on it, with a
+button through to the record in the dashboard, and a confirmation to the person
+who submitted it.
+
+Recipients come from dashboard permissions rather than a settings list: someone
+who can open an enquiry is told about enquiries. Check it with
+
+```bash
+python manage.py test_notifications
+```
+
+To test without emailing real people, set `EMAIL_REDIRECT_TO`. See
+[Docs/email.md](Docs/email.md).
+
 ## SEO
 
 Every public page carries a title, meta description, canonical URL and Open

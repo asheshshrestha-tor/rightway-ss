@@ -210,7 +210,11 @@ class SocialLinkTests(TestCase):
 
 
 class OutgoingMailTests(TestCase):
-    """Changing the contact email must change where enquiries actually go."""
+    """Changing the contact email must change where enquiries actually go.
+
+    Notifications also copy settings.ADMIN_NOTIFICATION_EMAILS, so these assert
+    the office address is among the recipients rather than the only one.
+    """
 
     def test_enquiry_notification_uses_the_settings_email(self):
         settings_row = SiteSettings.load()
@@ -227,7 +231,7 @@ class OutgoingMailTests(TestCase):
                 "hp_reference": "",
             },
         )
-        self.assertEqual(mail.outbox[0].to, ["newinbox@example.com"])
+        self.assertIn("newinbox@example.com", mail.outbox[0].to)
 
     def test_consultation_notification_uses_the_settings_email(self):
         settings_row = SiteSettings.load()
@@ -254,7 +258,7 @@ class OutgoingMailTests(TestCase):
             for message in mail.outbox
             if message.subject.startswith("Consultation request")
         ]
-        self.assertEqual(office[0].to, ["newinbox@example.com"])
+        self.assertIn("newinbox@example.com", office[0].to)
 
     def test_consultation_email_quotes_the_settings_phone(self):
         settings_row = SiteSettings.load()

@@ -167,8 +167,9 @@ class ApplicationSubmissionTests(TestCase):
 
     def test_office_is_notified_without_attaching_the_resume(self):
         self.client.post(self.vacancy.get_absolute_url(), application_payload())
-        self.assertEqual(len(mail.outbox), 1)
-        message = mail.outbox[0]
+        # One notification to staff, one confirmation to the applicant.
+        self.assertEqual(len(mail.outbox), 2)
+        message = next(m for m in mail.outbox if m.subject.startswith("Job application"))
         self.assertIn("Support Worker", message.subject)
         self.assertEqual(message.reply_to, ["jamie@example.com"])
         # The resume itself is not emailed - it stays in private storage.
