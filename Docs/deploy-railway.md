@@ -89,6 +89,9 @@ SECURE_HSTS_SECONDS=31536000
 
 DEFAULT_FROM_EMAIL=no-reply@rightwaysupportservices.com.au
 CONTACT_EMAIL=arshdeep@rightwaysupportservices.com.au
+
+# How long to wait at boot for the private network to come up.
+DB_WAIT_SECONDS=90
 ```
 
 The `${{MySQL.MYSQL_URL}}` syntax is a Railway reference — it resolves at
@@ -273,8 +276,34 @@ gone; re-upload them, then fix step 5 before it happens again.
 **Dashboard charts are flat zero**
 The timezone tables. Step 7.
 
-**App cannot reach the database**
-Railway's internal networking is IPv6-only and takes a moment to come up on a
-cold boot. If `MYSQL_URL` will not connect, confirm both services are in the
-same project and environment; `MYSQL_PUBLIC_URL` works as a fallback, though it
-sends traffic over the public internet and is billed as egress.
+**`Unknown server host 'mysql.railway.internal' (-2)`**
+
+`-2` is EAI_NONAME: the name did not resolve. The private network is IPv6-only
+and is not up at the instant a container starts, so anything touching the
+database in the first moments of a cold boot fails this way. It reads like a
+configuration error and usually is not one.
+
+The container start command runs `scripts/wait_for_db.py` first, which retries
+for `DB_WAIT_SECONDS` (default 90) before giving up, so a slow private network
+resolves itself. Raise it if the logs show it timing out:
+
+```ini
+DB_WAIT_SECONDS=180
+```
+
+If it never resolves, the wait script prints what to check. In short:
+
+- The database and the app must be in the **same project and the same
+  environment**. Private networking does not cross environments, so an app in
+  `production` cannot see a database in `staging`.
+- The hostname comes from the **service name** — `${{MySQL.MYSQL_URL}}` expands
+  to `mysql.railway.internal` because the service is called `MySQL`. Renaming
+  the service changes the hostname.
+- Confirm `DATABASE_URL` is a live `${{...}}` reference and not a URL pasted in
+  by hand, which goes stale when credentials rotate.
+
+To determine quickly whether it is the network or the credentials, point
+`DATABASE_URL` at the database's `MYSQL_PUBLIC_URL` and redeploy. If that
+works, the credentials are fine and the problem is private networking. It is a
+reasonable way to get running today, but move back to the private URL when you
+can — public traffic is slower and billed as egress.

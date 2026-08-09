@@ -45,7 +45,11 @@ RUN mkdir -p /app/media /app/private-media
 
 EXPOSE 8000
 
-# `migrate` runs on every boot: applying nothing is a no-op, so it is safe to
-# repeat, and it means a deploy carrying a new migration needs no manual step.
+# wait_for_db first: a platform's private network is usually not up at the
+# instant the container starts, and the failure looks like a missing host
+# rather than a timing problem.
+#
+# `migrate` then runs on every boot: applying nothing is a no-op, so it is safe
+# to repeat, and a deploy carrying a new migration needs no manual step.
 # Keep this to a single replica - concurrent boots would race on migrate.
-CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 60 --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "python scripts/wait_for_db.py && python manage.py migrate --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 60 --access-logfile - --error-logfile -"]
