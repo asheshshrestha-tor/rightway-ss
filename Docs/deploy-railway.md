@@ -122,6 +122,54 @@ A volume attaches to one service and cannot be shared, so keep the app at
 **one replica**. Two replicas would also race each other running `migrate` at
 boot.
 
+### Why this is needed
+
+The image is rebuilt from the repository on every deploy, and the container
+filesystem starts empty. Anything written at runtime — an uploaded logo, a
+service photo, an applicant's résumé — exists only in that container. Push a
+commit, or let Railway restart the service, and it is gone. The database rows
+survive, so the site keeps rendering with broken images and applications whose
+résumé link 404s. Nothing errors, which is what makes it dangerous.
+
+A volume is real disk that outlives the container. Mounted at `/data`, with
+both roots pointed into it, uploads survive deploys and restarts.
+
+Two directories, deliberately separate:
+
+| Setting | Path | Served how |
+|---|---|---|
+| `MEDIA_ROOT` | `/data/media` | Publicly, at `/media/...` |
+| `PRIVATE_MEDIA_ROOT` | `/data/private-media` | Only via a permission-checked view |
+
+Résumés live in the second one. It has no URL of its own — the only way to read
+a file there is `/dashboard/applications/<pk>/resume/`, behind the
+`pages.view_application` permission. **Never point `MEDIA_ROOT` at `/data`
+itself**, or the private tree ends up inside the public one and every résumé
+becomes downloadable by guessing a URL. `dashboard.tests_careers.MediaLayoutTests`
+asserts they stay separate.
+
+### Restoring images you had locally
+
+Uploaded files are not in the repository — `media/` is gitignored, and the data
+migration copies database rows, not files. After deploying, re-upload through
+the dashboard anything you had uploaded locally: logo, favicon, service images,
+team photos.
+
+Services and team members without an uploaded image fall back to the artwork
+shipped in `static/`, so those pages render either way.
+
+### When a volume is not enough
+
+A volume is right for one instance, which is what this project needs. Move to
+object storage (S3, Cloudflare R2, Backblaze B2) if you ever need more than one
+replica, since a volume cannot be shared between them, or want backups and CDN
+delivery of uploads.
+
+That means `django-storages` and a `STORAGES["default"]` backend. The résumé
+download already goes through Django's storage API rather than a filesystem
+path, so it ports without changes — but keep the bucket **private** and keep
+serving résumés through the permission-checked view, never a public URL.
+
 ## 6. Generate a domain
 
 App service → **Settings** → **Networking** → **Generate Domain**.
@@ -272,6 +320,12 @@ after `SecurityMiddleware`. Check the build log.
 **Images vanished after a deploy**
 The volume is missing or `MEDIA_ROOT` is not pointed into it. The files are
 gone; re-upload them, then fix step 5 before it happens again.
+
+**Uploaded images 404, but files shipped in `static/` are fine**
+Different mechanisms: `static/` is baked into the image and served by
+WhiteNoise, while uploads are served by Django from `MEDIA_ROOT`. Check
+`SERVE_MEDIA` is not set to `False`, and that `MEDIA_ROOT` points at the volume
+and the file is actually on it.
 
 **Dashboard charts are flat zero**
 The timezone tables. Step 7.

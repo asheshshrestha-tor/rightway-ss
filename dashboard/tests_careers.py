@@ -272,3 +272,25 @@ class ResumeAccessTests(TestCase):
 
         os.remove(self.application.resume.storage.path(self.application.resume.name))
         self.assertEqual(self.client.get(self.url).status_code, 404)
+
+
+class MediaLayoutTests(TestCase):
+    """Django now serves MEDIA_ROOT itself in production, because a container
+    host has no web server in front of the app. That is only safe while the
+    private tree sits outside the public one, so assert it rather than trust it.
+    """
+
+    def test_private_media_is_not_inside_public_media(self):
+        from pathlib import Path
+
+        from django.conf import settings
+
+        public = Path(str(settings.MEDIA_ROOT)).resolve()
+        private = Path(str(settings.PRIVATE_MEDIA_ROOT)).resolve()
+
+        self.assertNotEqual(public, private)
+        self.assertFalse(
+            private.is_relative_to(public),
+            f"PRIVATE_MEDIA_ROOT ({private}) is inside MEDIA_ROOT ({public}), "
+            "so every applicant's resume is downloadable by guessing a URL.",
+        )

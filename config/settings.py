@@ -153,6 +153,14 @@ STORAGES = {
 MEDIA_URL = "media/"
 MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "media")
 
+# Uploaded images have to be served by something. On a container host there is
+# no web server in front, so Django does it - see config/urls.py. Turn this off
+# only when something else is serving MEDIA_URL, such as a CDN or object
+# storage; leaving it off with nothing in front means every uploaded logo and
+# photo 404s. It never exposes PRIVATE_MEDIA_ROOT, which is a separate
+# directory reached only through a permission-checked view.
+SERVE_MEDIA = env.bool("SERVE_MEDIA", default=True)
+
 # Uploaded resumes are personal information and must never be reachable by
 # guessing a URL. They live outside MEDIA_ROOT and are served only through a
 # permission-checked view (dashboard.careers_views.application_resume).
