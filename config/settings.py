@@ -45,6 +45,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves everything in STATIC_ROOT straight from the app process. Platforms
+    # like Railway put no web server in front, so without this the CSS, the
+    # Metronic bundle and the logo all 404 as soon as DEBUG is False.
+    # Must sit directly after SecurityMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -112,7 +117,14 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
         "COLLATION": "utf8mb4_unicode_ci",
     }
 
-AUTH_PASSWORD_VALIDATORS = []
+# Enforced when a password is set through a form - the dashboard's change and
+# reset pages. Existing passwords are unaffected until they are next changed.
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
 LANGUAGE_CODE = "en-au"
 TIME_ZONE = "Australia/Brisbane"
@@ -122,6 +134,21 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# The manifest backend hashes every filename, so a CSS change reaches visitors
+# immediately instead of waiting out a cached copy, and "Compressed" pre-builds
+# the gzip/brotli variants. It is opt-in because it refuses to resolve a static
+# file until `collectstatic` has written the manifest - which would make the
+# test suite fail on a fresh clone. The Dockerfile turns it on for production.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": env(
+            "STATICFILES_BACKEND",
+            default="django.contrib.staticfiles.storage.StaticFilesStorage",
+        )
+    },
+}
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "media")
@@ -167,6 +194,15 @@ CONSULTATION_PHONE = env("CONSULTATION_PHONE", default="0470 522 587")
 # --- HTTPS -----------------------------------------------------------------
 # Off by default so local development over http keeps working; turn on in the
 # production .env once TLS is terminating in front of the app.
+
+# Platforms like Railway terminate TLS at their edge and forward plain HTTP to
+# the app, so Django sees an insecure request and SECURE_SSL_REDIRECT would
+# redirect to https forever. This tells it to trust the proxy's own header.
+# Only safe when a proxy really is in front and sets the header itself - the
+# app must not be reachable directly, or a client could forge it.
+if env.bool("TRUST_PROXY_SSL_HEADER", default=False):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
 SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=False)
 CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=False)

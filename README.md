@@ -527,6 +527,25 @@ through `{{ ...|json_script }}` rather than inline interpolation.
 **Licensing:** Metronic is commercial software from KeenThemes. Using it in a
 delivered project needs a valid license purchased from ThemeForest.
 
+## Deployment
+
+The project ships a `Dockerfile` and serves its own static files through
+WhiteNoise, so it runs on any container host without a web server in front.
+
+Step-by-step for Railway, including the two failure modes that cause silent
+data loss rather than an error, is in
+[Docs/deploy-railway.md](Docs/deploy-railway.md).
+
+Whatever the host, it needs:
+
+- A **persistent volume** for `MEDIA_ROOT` and `PRIVATE_MEDIA_ROOT`. Container
+  filesystems are wiped on redeploy, taking every uploaded image and résumé
+  with them.
+- `TRUST_PROXY_SSL_HEADER=True` wherever TLS terminates at an edge proxy, or
+  `SECURE_SSL_REDIRECT` loops forever.
+- MySQL's **timezone tables loaded** — see [Docs/mysql.md](Docs/mysql.md).
+- Real SMTP settings. The console backend sends nothing.
+
 ## Before going live
 
 - Set a generated `SECRET_KEY` and `DEBUG=False` in `.env` (never commit `.env`)

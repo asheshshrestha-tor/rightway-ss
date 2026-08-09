@@ -1,5 +1,6 @@
 """The public side of the database-backed services module."""
 
+from django.templatetags.static import static
 from django.test import TestCase
 from django.urls import reverse
 
@@ -40,7 +41,7 @@ class ServiceModelTests(TestCase):
 
     def test_image_url_falls_back_to_a_slug_placeholder(self):
         service = Service.objects.get(slug="personal-care")
-        self.assertEqual(service.image_url, "/static/images/service-personal-care.svg")
+        self.assertEqual(service.image_url, static("images/service-personal-care.svg"))
 
     def test_image_url_falls_back_to_the_generic_placeholder(self):
         """A service an administrator invents has no matching artwork, and must
@@ -48,7 +49,7 @@ class ServiceModelTests(TestCase):
         service = Service.objects.create(
             title="Brand New Service", summary="s", description="d"
         )
-        self.assertEqual(service.image_url, "/static/images/service-placeholder.svg")
+        self.assertEqual(service.image_url, static("images/service-placeholder.svg"))
 
     def test_highlight_list_splits_and_trims(self):
         service = Service.objects.create(

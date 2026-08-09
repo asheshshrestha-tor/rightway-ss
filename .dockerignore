@@ -1,0 +1,36 @@
+# Keep secrets and local state out of the image. `.env` especially: the build
+# context would otherwise bake local credentials into a layer, where they stay
+# readable by anyone who can pull the image.
+.env
+.envrc
+id_*
+*.pem
+*.key
+
+# Local database and the data dumps taken from it - both hold real enquiries,
+# applications and consultation requests.
+*.sqlite3
+backups/
+
+# Uploads belong on the mounted volume, not in the image.
+media/
+private-media/
+
+# Rebuilt during the image build.
+staticfiles/
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+.git/
+.gitignore
+.vscode/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Design sources and screenshots - not needed to run the site.
+Docs/
+README.md

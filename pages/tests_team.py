@@ -1,5 +1,6 @@
 """The Meet Our Team section and individual profile pages."""
 
+from django.templatetags.static import static
 from django.test import TestCase
 from django.urls import reverse
 
@@ -34,13 +35,13 @@ class TeamMemberModelTests(TestCase):
 
     def test_photo_falls_back_to_the_slug_placeholder(self):
         member = TeamMember.objects.get(slug="priya-kaur")
-        self.assertEqual(member.photo_url, "/static/images/team-priya-kaur.svg")
+        self.assertEqual(member.photo_url, static("images/team-priya-kaur.svg"))
 
     def test_photo_falls_back_to_the_generic_placeholder(self):
         """Someone added by an administrator has no matching artwork and must
         still render rather than showing a broken image."""
         member = TeamMember.objects.create(name="Brand New", role="Support Worker")
-        self.assertEqual(member.photo_url, "/static/images/team-placeholder.svg")
+        self.assertEqual(member.photo_url, static("images/team-placeholder.svg"))
 
     def test_qualification_list_splits_and_trims(self):
         member = TeamMember.objects.create(

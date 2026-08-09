@@ -1,6 +1,7 @@
 """Site-wide settings: branding, contact details, footer, map, social links."""
 
 from django.core import mail
+from django.templatetags.static import static
 from django.test import TestCase
 from django.urls import reverse
 
@@ -73,9 +74,9 @@ class DerivedValueTests(TestCase):
 
     def test_branding_falls_back_to_the_shipped_files(self):
         settings_row = SiteSettings.load()
-        self.assertEqual(settings_row.logo_url, "/static/images/logo.png")
-        self.assertEqual(settings_row.logo_light_url, "/static/images/logo-light.png")
-        self.assertEqual(settings_row.favicon_url, "/static/images/favicon-32.png")
+        self.assertEqual(settings_row.logo_url, static("images/logo.png"))
+        self.assertEqual(settings_row.logo_light_url, static("images/logo-light.png"))
+        self.assertEqual(settings_row.favicon_url, static("images/favicon-32.png"))
 
     def test_initials_for_the_dashboard_mark(self):
         self.assertEqual(SiteSettings.load().initials, "RS")
@@ -128,7 +129,7 @@ class PublicSiteTests(TestCase):
 
     def test_favicon_falls_back_and_then_follows_an_upload(self):
         response = self.client.get(reverse("home"))
-        self.assertContains(response, "/static/images/favicon-32.png")
+        self.assertContains(response, static("images/favicon-32.png"))
 
 
 class SocialLinkTests(TestCase):

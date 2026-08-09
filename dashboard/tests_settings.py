@@ -5,6 +5,7 @@ import shutil
 import tempfile
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.templatetags.static import static
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -163,7 +164,7 @@ class SettingsEditTests(TestCase):
 
         header = self.client.get(reverse("home"))
         self.assertContains(header, settings_row.logo.url)
-        self.assertNotContains(header, "/static/images/logo.png")
+        self.assertNotContains(header, static("images/logo.png"))
 
     def test_favicon_upload_applies_to_site_and_dashboard(self):
         self.client.post(URL, {**payload(), "favicon": tiny_png("icon.png")})

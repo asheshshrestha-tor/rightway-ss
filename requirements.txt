@@ -6,5 +6,14 @@ django-environ>=0.11,<1.0
 
 # MySQL driver. Needs a C compiler and the MySQL client headers to build from
 # source; on Windows pip installs a prebuilt wheel, so no toolchain is needed.
+# The Dockerfile installs those headers for the Linux build.
 # Drop this line if the project stays on SQLite.
 mysqlclient>=2.2,<3.0
+
+# --- Serving -----------------------------------------------------------------
+# WSGI server. POSIX only, so it installs but will not run on Windows - local
+# development uses `manage.py runserver` instead.
+gunicorn>=23.0,<27.0
+
+# Serves STATIC_ROOT from the app process, for hosts with no web server in front.
+whitenoise>=6.6,<7.0
