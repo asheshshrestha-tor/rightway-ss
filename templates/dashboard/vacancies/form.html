@@ -1,0 +1,101 @@
+{% extends "dashboard/base.html" %}
+
+{% block toolbar_actions %}
+    {% if object and object.is_published %}
+        <a href="{{ object.get_absolute_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-light">
+            <i class="ki-outline ki-eye fs-4 me-1"></i>View advert
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger p-5 mb-6" role="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="row g-5 g-xl-8">
+        <div class="col-xl-8">
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">The role</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.title %}
+                    {% include "dashboard/partials/field.html" with field=form.summary %}
+                    {% include "dashboard/partials/field.html" with field=form.description %}
+                </div>
+            </div>
+
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title flex-column">
+                        <h3 class="fw-bold mb-1">Details</h3>
+                        <span class="text-muted fs-7">One item per line &mdash; each becomes a tick in the list</span>
+                    </div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.responsibilities %}
+                    {% include "dashboard/partials/field.html" with field=form.requirements %}
+                </div>
+            </div>
+
+            <div class="card card-flush">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Web address</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.slug %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Visibility</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    <div class="form-check form-switch form-check-custom form-check-solid mb-6">
+                        {{ form.is_published }}
+                        <label class="form-check-label fw-semibold text-gray-700" for="{{ form.is_published.id_for_label }}">
+                            Published
+                        </label>
+                    </div>
+
+                    {% include "dashboard/partials/field.html" with field=form.closing_date %}
+                    {% include "dashboard/partials/field.html" with field=form.order %}
+
+                    <div class="notice bg-light-primary rounded border-primary border border-dashed p-4">
+                        <span class="fs-8 text-gray-700">
+                            After the closing date the advert stays readable but stops
+                            accepting applications. Leave it empty to keep the role
+                            open indefinitely.
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-flush">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Conditions</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.employment_type %}
+                    {% include "dashboard/partials/field.html" with field=form.location %}
+                    {% include "dashboard/partials/field.html" with field=form.salary_range %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-3 py-8">
+        <a href="{% url 'dashboard:vacancy_list' %}" class="btn btn-light">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+            {% if object %}Save changes{% else %}Create vacancy{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}

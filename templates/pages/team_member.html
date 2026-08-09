@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ member.name }}, {{ member.role }} | {{ site.name }}{% endblock %}
+{% block meta_description %}{{ member.name }} is {{ member.role }} at Rightway Support Services in Toowoomba.{% endblock %}
+{% block body_class %}team-member{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            <nav class="breadcrumbs" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'about' %}">About Us</a></li>
+                    <li aria-current="page">{{ member.name }}</li>
+                </ol>
+            </nav>
+
+            <h1>{{ member.name }} <span>{{ member.role }}</span></h1>
+
+            {% comment %}
+            Qualifications here rather than the bio: the bio is the body of the
+            page just below, and showing a truncated copy in the hero reads as
+            the same paragraph twice.
+            {% endcomment %}
+            {% if member.qualification_list %}
+                <ul class="check-list">
+                    {% for item in member.qualification_list %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <div class="hero-actions">
+                <a class="btn btn--primary" href="{% url 'consultation' %}">
+                    Book a Free Consultation
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+                <a class="btn btn--outline" href="{% url 'about' %}#team">
+                    Meet the Team
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-media hero-media--circle">
+            <img src="{{ member.photo_url }}" alt="Portrait of {{ member.name }}">
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="shell service-detail-layout">
+        <div class="service-detail-body">
+            <h2>About {{ member.name }}</h2>
+            {% if member.bio %}
+                {{ member.bio|linebreaks }}
+            {% else %}
+                <p>{{ member.name }} is part of the Rightway Support Services team,
+                   working as {{ member.role }}.</p>
+            {% endif %}
+        </div>
+
+        <aside class="service-detail-aside">
+            <div class="panel panel--white">
+                <h2>Work With Us</h2>
+                <p>Every support worker on our team is screened, trained and supervised.</p>
+                <ul class="contact-list">
+                    <li class="contact-item">
+                        <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-phone"></use></svg></span>
+                        <div>
+                            <h3>Phone</h3>
+                            <a href="{{ site.phone_href }}">{{ site.phone }}</a>
+                        </div>
+                    </li>
+                    <li class="contact-item">
+                        <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-clock"></use></svg></span>
+                        <div>
+                            <h3>Office Hours</h3>
+                            <p>{{ site.hours }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</section>
+
+{% if colleagues %}
+    <section class="section section--alt">
+        <div class="shell">
+            <div class="section-head section-head--row">
+                <div>
+                    <h2>The Rest of the Team</h2>
+                    <p>The people behind the support you receive.</p>
+                </div>
+                <a class="btn btn--outline btn--sm" href="{% url 'about' %}#team">
+                    About Us
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+
+            <div class="card-grid card-grid--4">
+                {% for other in colleagues %}
+                    <article class="team-card">
+                        <a class="team-card__media" href="{{ other.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+                            <img src="{{ other.photo_url }}" alt="">
+                        </a>
+                        <div class="team-card__body">
+                            <h3><a href="{{ other.get_absolute_url }}">{{ other.name }}</a></h3>
+                            <p>{{ other.role }}</p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}

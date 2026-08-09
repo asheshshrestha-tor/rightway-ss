@@ -1,0 +1,108 @@
+{% comment %}Avatar + dropdown shown at the right of the toolbar.{% endcomment %}
+<div class="d-flex align-items-center ms-2">
+    {% comment %}
+    data-kt-attach and data-kt-menu="true" are what KTMenu binds to. Without
+    data-kt-menu="true" on the dropdown, clicking the avatar does nothing.
+    {% endcomment %}
+    <div class="cursor-pointer symbol symbol-40px symbol-circle"
+         data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
+         data-kt-attach="parent" data-kt-menu-placement="bottom-end">
+        <span class="symbol-label bg-light-primary text-primary fw-bold fs-6">
+            {{ request.user.get_username|slice:":2"|upper }}
+        </span>
+    </div>
+
+    <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-color fw-semibold py-4 fs-6 w-275px"
+         data-kt-menu="true">
+
+        <div class="menu-item px-3">
+            <div class="menu-content d-flex align-items-center px-3">
+                <div class="symbol symbol-50px me-4 flex-shrink-0">
+                    <span class="symbol-label bg-light-primary text-primary fw-bold fs-4">
+                        {{ request.user.get_username|slice:":2"|upper }}
+                    </span>
+                </div>
+                {% comment %}
+                min-width:0 (via .user-identity) is what lets the long email
+                truncate instead of pushing the menu wider than its 275px box.
+                {% endcomment %}
+                <div class="d-flex flex-column user-identity">
+                    <div class="fw-bold d-flex align-items-center fs-5">
+                        <span class="text-truncate">{{ request.user.get_full_name|default:request.user.get_username }}</span>
+                        {% if request.user.is_superuser %}
+                            <span class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2 flex-shrink-0">Admin</span>
+                        {% endif %}
+                    </div>
+                    <span class="fw-semibold text-muted fs-7 text-truncate"
+                          title="{{ request.user.email|default:'No email set' }}">
+                        {{ request.user.email|default:"No email set" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="separator my-2"></div>
+
+        <div class="menu-item px-5">
+            <a href="{% url 'dashboard:account' %}" class="menu-link px-5">My Account</a>
+        </div>
+        <div class="menu-item px-5">
+            <a href="{% url 'dashboard:password_change' %}" class="menu-link px-5">Change Password</a>
+        </div>
+        <div class="menu-item px-5">
+            <a href="{% url 'home' %}" target="_blank" rel="noopener" class="menu-link px-5">Public Website</a>
+        </div>
+
+        <div class="separator my-2"></div>
+
+        {% comment %}
+        Light / dark / system switcher. The behaviour lives in KTThemeMode
+        inside Metronic's scripts.bundle.js, which binds to these data-kt-*
+        attributes and persists the choice in localStorage.
+        {% endcomment %}
+        <div class="menu-item px-5" data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
+             data-kt-menu-placement="left-start" data-kt-menu-offset="-15px, 0">
+            <a href="#" class="menu-link px-5">
+                <span class="menu-title position-relative">Appearance
+                    <span class="ms-5 position-absolute translate-middle-y top-50 end-0">
+                        <i class="ki-outline ki-night-day theme-light-show fs-2"></i>
+                        <i class="ki-outline ki-moon theme-dark-show fs-2"></i>
+                    </span>
+                </span>
+            </a>
+
+            <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-title-gray-700 menu-icon-gray-500 menu-active-bg menu-state-color fw-semibold py-4 fs-base w-150px"
+                 data-kt-menu="true" data-kt-element="theme-mode-menu">
+                <div class="menu-item px-3 my-0">
+                    <a href="#" class="menu-link px-3 py-2" data-kt-element="mode" data-kt-value="light">
+                        <span class="menu-icon" data-kt-element="icon"><i class="ki-outline ki-night-day fs-2"></i></span>
+                        <span class="menu-title">Light</span>
+                    </a>
+                </div>
+                <div class="menu-item px-3 my-0">
+                    <a href="#" class="menu-link px-3 py-2" data-kt-element="mode" data-kt-value="dark">
+                        <span class="menu-icon" data-kt-element="icon"><i class="ki-outline ki-moon fs-2"></i></span>
+                        <span class="menu-title">Dark</span>
+                    </a>
+                </div>
+                <div class="menu-item px-3 my-0">
+                    <a href="#" class="menu-link px-3 py-2" data-kt-element="mode" data-kt-value="system">
+                        <span class="menu-icon" data-kt-element="icon"><i class="ki-outline ki-screen fs-2"></i></span>
+                        <span class="menu-title">System</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="separator my-2"></div>
+
+        <div class="menu-item px-5">
+            <form method="post" action="{% url 'dashboard:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="menu-link px-5 bg-transparent border-0 w-100 text-start">
+                    Sign Out
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

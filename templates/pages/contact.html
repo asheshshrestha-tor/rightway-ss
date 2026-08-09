@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact Us | {{ site.name }}{% endblock %}
+{% block meta_description %}Have a question or want to book a free consultation? Call 0470 522 587, email us, or send a message and the Rightway Support Services team will be in touch.{% endblock %}
+{% block body_class %}contact{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="shell card-grid card-grid--2">
+        <div>
+            {% include "partials/breadcrumbs.html" with current="Contact" %}
+            <div class="title-stack">
+                <h1>Get in Touch <span>We're Here to Help</span></h1>
+            </div>
+            <p class="lead">Have a question or want to book a consultation? We'd love to hear from you.</p>
+
+            <ul class="contact-list">
+                <li class="contact-item">
+                    <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-phone"></use></svg></span>
+                    <div>
+                        <h3>Phone</h3>
+                        <a href="{{ site.phone_href }}">{{ site.phone }}</a>
+                    </div>
+                </li>
+                <li class="contact-item">
+                    <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-mail"></use></svg></span>
+                    <div>
+                        <h3>Email</h3>
+                        <a href="mailto:{{ site.email }}">{{ site.email }}</a>
+                    </div>
+                </li>
+                <li class="contact-item">
+                    <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-pin"></use></svg></span>
+                    <div>
+                        <h3>Address</h3>
+                        <p>{{ site.address }}</p>
+                    </div>
+                </li>
+                <li class="contact-item">
+                    <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-clock"></use></svg></span>
+                    <div>
+                        <h3>Office Hours</h3>
+                        <p>{{ site.hours }}</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="form-card" id="enquiry">
+            <h2>Send Us a Message</h2>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert--{% if message.tags == 'error' %}error{% else %}success{% endif %}" role="status">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert--error" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <form method="post" action="{% url 'contact' %}#enquiry" novalidate>
+                {% csrf_token %}
+
+                {% comment %}
+                Spam trap: hidden from people, tempting to bots. It never
+                produces a validation error - a filled honeypot quarantines the
+                enquiry server side instead of rejecting it, so an autofill
+                misfire can never leave a real person stuck.
+                {% endcomment %}
+                <div class="honeypot" aria-hidden="true">
+                    <label for="{{ form.honeypot.id_for_label }}">{{ form.honeypot.label }}</label>
+                    {{ form.honeypot }}
+                </div>
+
+                {% for field in form.visible_fields %}
+                    {% if field.name != form.honeypot.name %}
+                        <div class="field{% if field.errors %} field--error{% endif %}">
+                            <label for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <ul class="errorlist">
+                                    {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <button class="btn btn--primary btn--block" type="submit">
+                    Send Message
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="section section--tight">
+    <div class="shell">
+        <h2 class="visually-hidden">Our location</h2>
+        <div class="map-embed">
+            <iframe
+                src="{{ site.map_url }}"
+                title="Map showing {{ site.name }} in {{ site.address }}"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen></iframe>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Book a Free Consultation" cta_text="We're here to support you every step of the way." cta_label="Book Now" cta_url="#enquiry" cta_icon="calendar-check" %}
+{% endblock %}

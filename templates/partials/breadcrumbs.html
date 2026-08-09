@@ -1,0 +1,7 @@
+{% comment %}Usage: {% include "partials/breadcrumbs.html" with current="About Us" %}{% endcomment %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li aria-current="page">{{ current }}</li>
+    </ol>
+</nav>

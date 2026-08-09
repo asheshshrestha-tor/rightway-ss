@@ -1,0 +1,19 @@
+{% comment %}
+Four-up icon row used under the hero on the Home and Services pages.
+Usage: {% include "partials/feature_strip.html" with features=why_us %}
+{% endcomment %}
+<section class="feature-strip">
+    <div class="shell feature-grid">
+        {% for feature in features %}
+            <div class="feature">
+                <span class="feature__icon">
+                    <svg aria-hidden="true"><use href="#i-{{ feature.icon }}"></use></svg>
+                </span>
+                <div>
+                    <h3>{{ feature.title }}</h3>
+                    <p>{{ feature.text }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>

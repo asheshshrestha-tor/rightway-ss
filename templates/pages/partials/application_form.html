@@ -1,0 +1,61 @@
+{% comment %}
+Shared application form, used by a vacancy's page and by the speculative
+"send us your resume" page.
+
+enctype is required: without it the browser posts field names only and the
+resume is silently dropped.
+{% endcomment %}
+<div class="form-card" id="apply">
+    <h2>{{ form_title|default:"Apply for this role" }}</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert--{% if message.tags == 'error' %}error{% else %}success{% endif %}" role="status">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if form %}
+        {% if form.non_field_errors %}
+            <div class="alert alert--error" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            {% for field in form %}
+                <div class="field{% if field.errors %} field--error{% endif %}">
+                    <label for="{{ field.id_for_label }}">
+                        {{ field.label }}{% if field.field.required %} <span aria-hidden="true">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="field-help">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        <ul class="errorlist">
+                            {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button class="btn btn--primary btn--block" type="submit">
+                Submit Application
+                <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+            </button>
+
+            <p class="field-help mt-lg">
+                We handle your details in line with our
+                <a href="{% url 'privacy_policy' %}">privacy policy</a>.
+            </p>
+        </form>
+    {% else %}
+        <div class="alert alert--error" role="status">
+            Applications for this role have closed. Take a look at our
+            <a href="{% url 'careers' %}">current vacancies</a>, or
+            <a href="{% url 'apply' %}">send us your resume</a> anyway.
+        </div>
+    {% endif %}
+</div>

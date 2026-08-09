@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Privacy Policy | {{ site.name }}{% endblock %}
+{% block meta_description %}How Rightway Support Services collects, uses, shares and protects your personal information, and the rights you have over that information.{% endblock %}
+{% block body_class %}privacy{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="shell policy-layout">
+        <div>
+            {% include "partials/breadcrumbs.html" with current="Privacy Policy" %}
+            <div class="title-stack">
+                <h1>Privacy Policy <span>Your Privacy Matters</span></h1>
+            </div>
+            <p class="lead">We are committed to protecting your privacy and handling your personal information with care and respect.</p>
+
+            <div class="policy-body">
+                {% for section in privacy_sections %}
+                    <h2>{{ section.title }}</h2>
+                    <p>{{ section.body }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="policy-media">
+            <img src="{% static 'images/hero-privacy.svg' %}" alt="A support worker talking with a participant in a bright living room">
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="We Respect Your Privacy" cta_text="Your trust is important to us." cta_label="Contact Us" cta_url="/contact/" cta_icon="lock" %}
+{% endblock %}

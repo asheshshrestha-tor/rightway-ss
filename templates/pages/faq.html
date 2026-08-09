@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}FAQ | {{ site.name }}{% endblock %}
+{% block meta_description %}Answers to common questions about NDIS support, accessing our services, how our support workers are trained, and how to book a free consultation.{% endblock %}
+{% block body_class %}faq{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="shell">
+        {% include "partials/breadcrumbs.html" with current="FAQ" %}
+        <div class="section-head title-stack">
+            <h1>Frequently Asked Questions <span>We're here to help</span></h1>
+            <p>Find answers to common questions about our services and support.</p>
+        </div>
+
+        <div class="faq-layout">
+            <div class="faq-list" data-faq>
+                {% for item in faqs %}
+                    <div class="faq-item">
+                        <h2>
+                            <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-answer-{{ forloop.counter }}" id="faq-question-{{ forloop.counter }}">
+                                {{ item.question }}
+                            </button>
+                        </h2>
+                        <div class="faq-answer" id="faq-answer-{{ forloop.counter }}" role="region" aria-labelledby="faq-question-{{ forloop.counter }}">
+                            <div><p>{{ item.answer }}</p></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <aside class="faq-aside">
+                <span class="faq-aside__mark" aria-hidden="true">?</span>
+                <img src="{% static 'images/faq-support.png' %}" alt="A member of the support team ready to answer your questions">
+            </aside>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Still Have Questions?" cta_text="We're here to help. Get in touch with us today." cta_label="Contact Us" cta_url="/contact/" cta_icon="question" %}
+{% endblock %}

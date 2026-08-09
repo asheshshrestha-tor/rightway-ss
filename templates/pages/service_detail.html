@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ service.title }} | {{ site.name }}{% endblock %}
+{% block meta_description %}{{ service.meta_description|default:service.summary }}{% endblock %}
+{% block body_class %}service-detail{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            <nav class="breadcrumbs" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'services' %}">Services</a></li>
+                    <li aria-current="page">{{ service.title }}</li>
+                </ol>
+            </nav>
+
+            {% comment %}
+            Only the description here. The summary is a condensed version of it
+            for cards, so showing both reads as the same sentence twice.
+            {% endcomment %}
+            <h1>{{ service.title }}</h1>
+            <p class="lead">{{ service.description }}</p>
+
+            <div class="hero-actions">
+                <a class="btn btn--primary" href="{% url 'consultation' %}?service={{ service.slug }}">
+                    Book a Free Consultation
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+                <a class="btn btn--outline" href="{% url 'services' %}">
+                    All Services
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-media hero-media--leaf">
+            <img src="{{ service.image_url }}" alt="{{ service.title }} support in practice">
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="shell service-detail-layout">
+        <div class="service-detail-body">
+            <span class="service-detail__icon">
+                <svg aria-hidden="true"><use href="#i-{{ service.icon }}"></use></svg>
+            </span>
+
+            <h2>About {{ service.title }}</h2>
+
+            {% if service.body %}
+                {{ service.body|linebreaks }}
+            {% else %}
+                <p>{{ service.description }}</p>
+            {% endif %}
+        </div>
+
+        <aside class="service-detail-aside">
+            {% if service.highlight_list %}
+                <div class="panel">
+                    <h2>What's Included</h2>
+                    <ul class="check-list">
+                        {% for item in service.highlight_list %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="panel panel--white mt-lg">
+                <h2>Talk to Us</h2>
+                <p>Not sure whether this is the right support? We'll talk it through with you, no obligation.</p>
+                <ul class="contact-list">
+                    <li class="contact-item">
+                        <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-phone"></use></svg></span>
+                        <div>
+                            <h3>Phone</h3>
+                            <a href="{{ site.phone_href }}">{{ site.phone }}</a>
+                        </div>
+                    </li>
+                    <li class="contact-item">
+                        <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-mail"></use></svg></span>
+                        <div>
+                            <h3>Email</h3>
+                            <a href="mailto:{{ site.email }}">{{ site.email }}</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</section>
+
+{% if related %}
+    <section class="section section--alt">
+        <div class="shell">
+            <div class="section-head section-head--row">
+                <div>
+                    <h2>Other Services</h2>
+                    <p>More ways we can support you.</p>
+                </div>
+                <a class="btn btn--outline btn--sm" href="{% url 'services' %}">
+                    View All Services
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+
+            <div class="card-grid card-grid--3">
+                {% for other in related %}
+                    <article class="card">
+                        <a class="card__media" href="{{ other.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+                            <img src="{{ other.image_url }}" alt="">
+                        </a>
+                        <div class="card__body">
+                            <h3><a href="{{ other.get_absolute_url }}">{{ other.title }}</a></h3>
+                            <p>{{ other.summary }}</p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Ready to Get Started?" cta_text="Let's work together to achieve your goals." %}
+{% endblock %}

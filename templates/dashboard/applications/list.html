@@ -1,0 +1,117 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<div class="card card-flush">
+    <div class="card-header pt-6 gap-3 flex-wrap">
+        <form method="get" class="card-title d-flex align-items-center gap-3 flex-wrap m-0">
+            <div class="d-flex align-items-center position-relative">
+                <i class="ki-outline ki-magnifier fs-3 position-absolute ms-4 text-gray-500"></i>
+                <input type="search" name="q" value="{{ query }}" class="form-control form-control-solid w-200px ps-12"
+                       placeholder="Search applicants" aria-label="Search applicants">
+            </div>
+
+            <select name="vacancy" class="form-select form-select-solid w-175px" aria-label="Filter by vacancy">
+                <option value="">All roles</option>
+                <option value="speculative" {% if vacancy == "speculative" %}selected{% endif %}>Speculative</option>
+                <optgroup label="Vacancy">
+                    {% for item in vacancies %}
+                        <option value="{{ item.pk }}" {% if vacancy == item.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ item.title }}
+                        </option>
+                    {% endfor %}
+                </optgroup>
+            </select>
+
+            <select name="status" class="form-select form-select-solid w-150px" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="assigned" class="form-select form-select-solid w-175px" aria-label="Filter by assigned user">
+                <option value="">Anyone</option>
+                <option value="me" {% if assigned == "me" %}selected{% endif %}>Assigned to me</option>
+                <option value="unassigned" {% if assigned == "unassigned" %}selected{% endif %}>Unassigned</option>
+                <optgroup label="Staff member">
+                    {% for person in assignees %}
+                        <option value="{{ person.pk }}" {% if assigned == person.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ person.get_full_name|default:person.username }}
+                        </option>
+                    {% endfor %}
+                </optgroup>
+            </select>
+
+            <button type="submit" class="btn btn-light-primary">Filter</button>
+            {% if query or status or vacancy or assigned %}
+                <a href="{% url 'dashboard:application_list' %}" class="btn btn-light">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card-body pt-0">
+        <div class="table-responsive">
+            <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+                <thead>
+                    <tr class="fw-bold text-muted fs-7 text-uppercase">
+                        <th class="min-w-200px">Applicant</th>
+                        <th class="min-w-175px d-none d-lg-table-cell">Applied for</th>
+                        <th class="min-w-125px">Status</th>
+                        <th class="min-w-125px d-none d-md-table-cell">Received</th>
+                        <th class="text-end min-w-100px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in page_obj %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'dashboard:application_detail' application.pk %}"
+                                   class="text-gray-800 fw-bold text-hover-primary fs-6 d-block">{{ application.full_name }}</a>
+                                <span class="text-muted fw-semibold fs-7">{{ application.email }}</span>
+                            </td>
+                            <td class="d-none d-lg-table-cell">
+                                <span class="text-gray-700 fw-semibold fs-7">{{ application.role_label }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-light-{{ application.status_css }} fw-bold">{{ application.get_status_display }}</span>
+                                <div class="text-muted fs-8 mt-1">
+                                    {% if application.handled_by %}
+                                        {{ application.handled_by.get_full_name|default:application.handled_by.username }}
+                                    {% else %}Unassigned{% endif %}
+                                </div>
+                            </td>
+                            <td class="text-gray-600 fw-semibold fs-7 d-none d-md-table-cell">
+                                {{ application.created_at|date:"j M Y" }}<br>
+                                <span class="text-muted fs-8">{{ application.created_at|date:"g:i a" }}</span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'dashboard:application_resume' application.pk %}"
+                                   class="btn btn-icon btn-light btn-sm me-1" title="Download resume">
+                                    <i class="ki-outline ki-file-down fs-4"></i>
+                                </a>
+                                <a href="{% url 'dashboard:application_detail' application.pk %}"
+                                   class="btn btn-icon btn-light btn-sm" title="Open">
+                                    <i class="ki-outline ki-eye fs-4"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-10">
+                                {% if query or status or vacancy or assigned %}
+                                    No applications match this search.
+                                {% else %}
+                                    No applications yet. Submissions from the careers
+                                    pages appear here.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "dashboard/partials/pagination.html" %}
+    </div>
+</div>
+{% endblock %}

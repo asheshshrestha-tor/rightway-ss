@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Send Your Resume | Careers | {{ site.name }}{% endblock %}
+{% block meta_description %}Don't see the right role? Send us your resume and we'll be in touch when something suitable comes up.{% endblock %}
+{% block body_class %}apply{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="shell card-grid card-grid--2">
+        <div>
+            <nav class="breadcrumbs" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'careers' %}">Careers</a></li>
+                    <li aria-current="page">Send Your Resume</li>
+                </ol>
+            </nav>
+
+            <div class="title-stack">
+                <h1>Send Your Resume <span>We'd Love to Hear From You</span></h1>
+            </div>
+
+            <p class="lead">
+                We are always looking for passionate people to join our team. Send
+                us your details and we'll get in touch when something suitable
+                comes up.
+            </p>
+
+            <ul class="check-list">
+                <li>We keep your details on file for future openings</li>
+                <li>No NDIS experience? We provide training and induction</li>
+                <li>Flexible hours across Toowoomba and surrounds</li>
+            </ul>
+
+            <p class="mt-lg">
+                <a class="btn btn--outline" href="{% url 'careers' %}">
+                    See Current Vacancies
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </p>
+        </div>
+
+        {% include "pages/partials/application_form.html" with form_title="Send Us Your Resume" %}
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Join Our Team" cta_text="Help us empower individuals to live their best life." cta_label="View Current Vacancies" cta_url="/careers/" cta_icon="community" %}
+{% endblock %}

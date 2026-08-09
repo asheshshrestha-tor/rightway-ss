@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ vacancy.title }} | Careers | {{ site.name }}{% endblock %}
+{% block meta_description %}{{ vacancy.summary }}{% endblock %}
+{% block body_class %}vacancy-detail{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            <nav class="breadcrumbs" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'careers' %}">Careers</a></li>
+                    <li aria-current="page">{{ vacancy.title }}</li>
+                </ol>
+            </nav>
+
+            <h1>{{ vacancy.title }}</h1>
+
+            <ul class="meta-row">
+                <li>
+                    <svg aria-hidden="true"><use href="#i-clock-flex"></use></svg>
+                    {{ vacancy.get_employment_type_display }}
+                </li>
+                <li>
+                    <svg aria-hidden="true"><use href="#i-pin"></use></svg>
+                    {{ vacancy.location }}
+                </li>
+                {% if vacancy.salary_range %}
+                    <li>
+                        <svg aria-hidden="true"><use href="#i-growth"></use></svg>
+                        {{ vacancy.salary_range }}
+                    </li>
+                {% endif %}
+                {% if vacancy.closing_date %}
+                    <li>
+                        <svg aria-hidden="true"><use href="#i-calendar-check"></use></svg>
+                        {% if vacancy.is_closed %}
+                            Closed {{ vacancy.closing_date|date:"j M Y" }}
+                        {% else %}
+                            Applications close {{ vacancy.closing_date|date:"j M Y" }}
+                        {% endif %}
+                    </li>
+                {% endif %}
+            </ul>
+
+            <p class="lead">{{ vacancy.summary }}</p>
+
+            <div class="hero-actions">
+                {% if vacancy.accepts_applications %}
+                    <a class="btn btn--primary" href="#apply">
+                        Apply Now
+                        <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                    </a>
+                {% endif %}
+                <a class="btn btn--outline" href="{% url 'careers' %}">
+                    All Vacancies
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-media hero-media--leaf">
+            <img src="{% static 'images/hero-careers.png' %}" alt="Members of the Rightway Support Services team">
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="shell service-detail-layout">
+        <div class="service-detail-body">
+            <h2>About the role</h2>
+            {{ vacancy.description|linebreaks }}
+
+            {% if vacancy.responsibility_list %}
+                <h2 class="mt-lg">What you'll be doing</h2>
+                <ul class="check-list">
+                    {% for item in vacancy.responsibility_list %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if vacancy.requirement_list %}
+                <h2 class="mt-lg">What you'll bring</h2>
+                <ul class="check-list">
+                    {% for item in vacancy.requirement_list %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <aside class="service-detail-aside">
+            {% include "pages/partials/application_form.html" %}
+        </aside>
+    </div>
+</section>
+
+{% if other_vacancies %}
+    <section class="section section--alt">
+        <div class="shell">
+            <div class="section-head section-head--row">
+                <div>
+                    <h2>Other Openings</h2>
+                    <p>More ways to join the team.</p>
+                </div>
+                <a class="btn btn--outline btn--sm" href="{% url 'careers' %}">
+                    View All Vacancies
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+
+            <ul class="vacancy-list">
+                {% for other in other_vacancies %}
+                    <li class="vacancy">
+                        <div>
+                            <h3><a href="{{ other.get_absolute_url }}">{{ other.title }}</a></h3>
+                            <p>{{ other.detail_line }}</p>
+                        </div>
+                        <a class="btn btn--primary btn--sm" href="{{ other.get_absolute_url }}">View Role</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Questions About This Role?" cta_text="We're happy to talk it through before you apply." cta_label="Contact Us" cta_url="/contact/" cta_icon="community" %}
+{% endblock %}

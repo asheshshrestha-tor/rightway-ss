@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About Us | {{ site.name }}{% endblock %}
+{% block meta_description %}Rightway Support Services is a person-centred disability support provider delivering high-quality, flexible and compassionate services across Toowoomba and surrounding areas.{% endblock %}
+{% block body_class %}about{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            {% include "partials/breadcrumbs.html" with current="About Us" %}
+            <h1>About <span>{{ site.name }}</span></h1>
+            <p class="lead">We are a person-centred disability support provider committed to delivering high-quality, flexible and compassionate services across Toowoomba and surrounding areas.</p>
+            <ul class="check-list">
+                <li>Empowering individuals with disability</li>
+                <li>Promoting choice, independence and inclusion</li>
+            </ul>
+        </div>
+
+        <div class="hero-media hero-media--leaf">
+            <img src="{% static 'images/hero-about.png' %}" alt="A support worker walking outdoors with a participant using a wheelchair">
+        </div>
+    </div>
+</section>
+
+<section class="section section--tight">
+    <div class="shell split-panel">
+        <div>
+            <h2>Our Mission</h2>
+            <p>To empower individuals with disability to live independently, connect with their community and achieve their personal goals.</p>
+        </div>
+        <div>
+            <h2>Our Vision</h2>
+            <p>A community where every individual is respected, included and supported to live the life they choose.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section section--tight">
+    <div class="shell">
+        <h2 class="visually-hidden">Our Values</h2>
+        <ul class="value-grid">
+            {% for value in values %}
+                <li class="value-tile">
+                    <span class="value-tile__icon">
+                        <svg aria-hidden="true"><use href="#i-{{ value.icon }}"></use></svg>
+                    </span>
+                    <span>{{ value.title }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</section>
+
+<section class="section section--alt" id="team">
+    <div class="shell">
+        <div class="section-head">
+            <h2>Meet Our Team</h2>
+            <p>The people behind the support you receive.</p>
+        </div>
+        <div class="card-grid card-grid--4">
+            {% for member in team %}
+                <article class="team-card">
+                    <a class="team-card__media" href="{{ member.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+                        <img src="{{ member.photo_url }}" alt="">
+                    </a>
+                    <div class="team-card__body">
+                        <h3><a href="{{ member.get_absolute_url }}">{{ member.name }}</a></h3>
+                        <p>{{ member.role }}</p>
+                    </div>
+                </article>
+            {% empty %}
+                <p>Our team will be introduced here shortly.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger p-5 mb-6" role="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="card card-flush mb-5 mb-xl-8">
+        <div class="card-header pt-6">
+            <div class="card-title"><h3 class="fw-bold m-0">Role name</h3></div>
+        </div>
+        <div class="card-body pt-4">
+            <div class="row">
+                <div class="col-lg-6">
+                    {% include "dashboard/partials/field.html" with field=form.name %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-flush">
+        <div class="card-header pt-6">
+            <div class="card-title flex-column">
+                <h3 class="fw-bold mb-1">Permissions</h3>
+                <span class="text-muted fs-7">Everything a user holding this role is allowed to do</span>
+            </div>
+            <div class="card-toolbar">
+                <button type="button" class="btn btn-sm btn-light" data-permissions-toggle>Select all</button>
+            </div>
+        </div>
+        <div class="card-body pt-4">
+            <div class="row g-5">
+                {% for label, checkboxes in form.permission_groups %}
+                    <div class="col-md-6 col-xl-4">
+                        <div class="permission-group">
+                            <div class="permission-group__title">{{ label }}</div>
+                            {% for checkbox in checkboxes %}
+                                <div class="form-check form-check-custom form-check-solid form-check-sm">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                        {{ checkbox.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% if form.permissions.errors %}
+                <ul class="field-errors">{% for e in form.permissions.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-3 py-8">
+        <a href="{% url 'dashboard:group_list' %}" class="btn btn-light">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+            {% if object %}Save changes{% else %}Create role{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // "Select all" toggle for the permission checkboxes.
+    document.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-permissions-toggle]");
+        if (!button) return;
+
+        var boxes = document.querySelectorAll('.permission-group input[type="checkbox"]');
+        var selectAll = button.textContent.trim() === "Select all";
+
+        boxes.forEach(function (box) { box.checked = selectAll; });
+        button.textContent = selectAll ? "Clear all" : "Select all";
+    });
+</script>
+{% endblock %}

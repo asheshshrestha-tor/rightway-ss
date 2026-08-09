@@ -1,0 +1,34 @@
+{% comment %}
+Metronic-styled pager. Preserves the current query string (search filters)
+by re-emitting every GET parameter except `page`.
+{% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+    <div class="d-flex flex-stack flex-wrap gap-3 pt-6">
+        <span class="text-muted fs-7">
+            Showing {{ page_obj.start_index }}&ndash;{{ page_obj.end_index }}
+            of {{ page_obj.paginator.count }}
+        </span>
+
+        <ul class="pagination mb-0">
+            <li class="page-item previous {% if not page_obj.has_previous %}disabled{% endif %}">
+                <a class="page-link" href="{% if page_obj.has_previous %}?{{ querystring }}page={{ page_obj.previous_page_number }}{% else %}#{% endif %}">
+                    <i class="previous"></i>
+                </a>
+            </li>
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                    <li class="page-item"><a class="page-link" href="?{{ querystring }}page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            <li class="page-item next {% if not page_obj.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if page_obj.has_next %}?{{ querystring }}page={{ page_obj.next_page_number }}{% else %}#{% endif %}">
+                    <i class="next"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+{% endif %}

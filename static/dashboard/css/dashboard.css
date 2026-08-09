@@ -1,0 +1,94 @@
+/* Project-specific overrides on top of the Metronic bundle.
+   Kept small on purpose - anything that can be done with Metronic utility
+   classes should be, so theme upgrades stay painless. */
+
+.brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7cb342 0%, #166534 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+}
+
+.brand-mark--sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    font-size: 0.82rem;
+}
+
+/* Name + email block in the avatar dropdown.
+   A flex child defaults to min-width:auto, which refuses to shrink below its
+   content - so a long email widens the menu instead of truncating. */
+.user-identity {
+    min-width: 0;
+}
+
+/* Logo previews on the site settings screen. The light/dark pair matters:
+   the footer logo sits on navy, so it has to be checked against navy. */
+.brand-preview {
+    display: grid;
+    place-items: center;
+    min-height: 96px;
+    padding: 1rem;
+    border-radius: 0.625rem;
+    border: 1px dashed var(--bs-border-color);
+}
+
+.brand-preview img {
+    max-height: 60px;
+    width: auto;
+}
+
+.brand-preview--light { background: #fff; }
+.brand-preview--dark { background: #0b2545; border-color: #0b2545; }
+
+.map-preview iframe {
+    display: block;
+    width: 100%;
+    height: 220px;
+    border: 0;
+}
+
+/* Permission checkbox grid on the role form */
+.permission-group {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.625rem;
+    padding: 1rem 1.25rem;
+    height: 100%;
+}
+
+.permission-group__title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bs-gray-500);
+    margin-bottom: 0.75rem;
+}
+
+.permission-group .form-check {
+    margin-bottom: 0.4rem;
+}
+
+.permission-group .form-check-label {
+    font-size: 0.875rem;
+    color: var(--bs-gray-700);
+}
+
+/* Form errors rendered by the shared field template */
+.field-errors {
+    margin: 0.35rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.85rem;
+    color: var(--bs-danger);
+}
+
+/* Login page background */
+.auth-bg {
+    background-image: linear-gradient(135deg, #0b2545 0%, #14532d 100%);
+}

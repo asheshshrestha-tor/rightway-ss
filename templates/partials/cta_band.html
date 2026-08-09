@@ -1,0 +1,27 @@
+{% comment %}
+Full-width green-to-blue call-to-action band that sits directly above the
+footer on every page. Override the copy from a page template with:
+
+    {% block cta %}
+        {% include "partials/cta_band.html" with cta_title="..." cta_text="..." cta_label="..." cta_icon="lock" %}
+    {% endblock %}
+{% endcomment %}
+{# The default CTA is "Book a Free Consultation", so it must lead there. #}
+{% url 'consultation' as default_cta_url %}
+<section class="cta-band">
+    <div class="shell cta-band__inner">
+        <div class="cta-band__lead">
+            <span class="cta-band__icon">
+                <svg aria-hidden="true"><use href="#i-{{ cta_icon|default:'sparkle' }}"></use></svg>
+            </span>
+            <div>
+                <h2>{{ cta_title|default:"Ready to Get Started?" }}</h2>
+                <p>{{ cta_text|default:"Let's work together to achieve your goals." }}</p>
+            </div>
+        </div>
+        <a class="btn btn--white" href="{{ cta_url|default:default_cta_url }}">
+            {{ cta_label|default:"Book a Free Consultation" }}
+            <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+        </a>
+    </div>
+</section>

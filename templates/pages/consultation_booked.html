@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Consultation Requested | {{ site.name }}{% endblock %}
+{% block meta_description %}Your free consultation request has been received.{% endblock %}
+{% block body_class %}consultation-booked{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="shell">
+        <div class="confirmation-card">
+            <span class="confirmation-card__icon">
+                <svg aria-hidden="true"><use href="#i-check-badge"></use></svg>
+            </span>
+
+            <h1>Thank you &mdash; we've got it</h1>
+            <p class="lead">
+                We'll call you within one business day to confirm a time. Keep
+                an eye on your email too &mdash; we've sent a copy of your request.
+            </p>
+
+            <p class="reference">
+                Your reference<strong>{{ reference }}</strong>
+            </p>
+
+            <div class="step-grid mt-lg">
+                {% for step in steps %}
+                    <div class="step">
+                        <span class="step__icon">
+                            <svg aria-hidden="true"><use href="#i-{{ step.icon }}"></use></svg>
+                        </span>
+                        <h3>{{ step.title }}</h3>
+                        <p>{{ step.text }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="hero-actions" style="justify-content:center">
+                <a class="btn btn--primary" href="{% url 'services' %}">
+                    Explore Our Services
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+                <a class="btn btn--outline" href="{% url 'home' %}">
+                    Back to Home
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card card-flush">
+            <div class="card-body text-center py-15">
+                <span class="symbol symbol-70px mb-6">
+                    <span class="symbol-label bg-light-danger">
+                        <i class="ki-outline ki-trash fs-2tx text-danger"></i>
+                    </span>
+                </span>
+
+                <h2 class="fw-bold text-gray-900 mb-3">Are you sure?</h2>
+
+                <p class="text-muted fs-6 mb-2">
+                    This will permanently delete {{ object_label }}. This cannot be undone.
+                </p>
+
+                {% if extra_warning %}
+                    <p class="text-warning fw-semibold fs-7 mb-0">{{ extra_warning }}</p>
+                {% endif %}
+
+                <form method="post" class="d-flex justify-content-center gap-3 mt-8">
+                    {% csrf_token %}
+                    <a href="{% url cancel_url %}" class="btn btn-light">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Yes, delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

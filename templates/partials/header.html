@@ -1,0 +1,50 @@
+{% load static %}
+<header class="site-header">
+    <div class="shell header-inner">
+        <a class="brand" href="{% url 'home' %}">
+            <img src="{{ site.logo_url }}" alt="{{ site.name }}{% if site.tagline %} - {{ site.tagline }}{% endif %}" width="220" height="77">
+        </a>
+
+        <nav class="primary-nav" id="primary-nav" aria-label="Main navigation">
+            <ul>
+                <li class="nav-item">
+                    <a href="{% url 'home' %}"{% if request.resolver_match.url_name == 'home' %} class="is-active" aria-current="page"{% endif %}>Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'about' %}"{% if request.resolver_match.url_name == 'about' %} class="is-active" aria-current="page"{% endif %}>About Us</a>
+                </li>
+                <li class="nav-item nav-item--has-menu">
+                    <a href="{% url 'services' %}" aria-expanded="false" aria-haspopup="true"{% if request.resolver_match.url_name == 'services' %} class="is-active" aria-current="page"{% endif %}>Services</a>
+                    <ul class="nav-menu">
+                        <li><a href="{% url 'services' %}">All Services</a></li>
+                        {% for service in nav_services %}
+                            <li><a href="{{ service.get_absolute_url }}">{{ service.title }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                <li class="nav-item nav-item--has-menu">
+                    <a href="{% url 'ndis_support' %}" aria-expanded="false" aria-haspopup="true"{% if request.resolver_match.url_name == 'ndis_support' %} class="is-active" aria-current="page"{% endif %}>NDIS</a>
+                    <ul class="nav-menu">
+                        <li><a href="{% url 'ndis_support' %}">NDIS Support</a></li>
+                        <li><a href="{% url 'ndis_support' %}#how-we-support-you">How We Support You</a></li>
+                        <li><a href="{% url 'faq' %}">NDIS FAQ</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'careers' %}"{% if request.resolver_match.url_name == 'careers' %} class="is-active" aria-current="page"{% endif %}>Careers</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'contact' %}"{% if request.resolver_match.url_name == 'contact' %} class="is-active" aria-current="page"{% endif %}>Contact</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="header-actions">
+            <a class="btn btn--primary btn--sm" href="{% url 'consultation' %}">Get Started</a>
+            <button class="nav-toggle" type="button" aria-controls="primary-nav" aria-expanded="false">
+                <span class="nav-toggle__bars" aria-hidden="true"></span>
+                <span class="visually-hidden">Toggle navigation</span>
+            </button>
+        </div>
+    </div>
+</header>

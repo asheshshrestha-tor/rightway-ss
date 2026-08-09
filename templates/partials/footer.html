@@ -1,0 +1,91 @@
+{% load static %}
+<footer class="site-footer">
+    <div class="shell footer-grid">
+        <div class="footer-brand">
+            <img src="{{ site.logo_light_url }}" alt="{{ site.name }}" width="230" height="80">
+            {% if site.footer_description %}<p>{{ site.footer_description }}</p>{% endif %}
+        </div>
+
+        <div>
+            <h3>Quick Links</h3>
+            <ul class="footer-links">
+                <li><a href="{% url 'home' %}">Home</a></li>
+                <li><a href="{% url 'about' %}">About Us</a></li>
+                <li><a href="{% url 'services' %}">Services</a></li>
+                <li><a href="{% url 'ndis_support' %}">NDIS Support</a></li>
+                <li><a href="{% url 'careers' %}">Careers</a></li>
+                <li><a href="{% url 'consultation' %}">Book a Consultation</a></li>
+                <li><a href="{% url 'contact' %}">Contact Us</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h3>Our Services</h3>
+            <ul class="footer-links">
+                {% for service in footer_services %}
+                    <li><a href="{{ service.get_absolute_url }}">{{ service.title }}</a></li>
+                {% endfor %}
+                <li><a href="{% url 'ndis_support' %}">NDIS Support</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h3>Contact Info</h3>
+            <ul class="footer-contact">
+                <li>
+                    <svg aria-hidden="true"><use href="#i-phone"></use></svg>
+                    <a href="{{ site.phone_href }}">{{ site.phone }}</a>
+                </li>
+                <li>
+                    <svg aria-hidden="true"><use href="#i-mail"></use></svg>
+                    <a href="mailto:{{ site.email }}">{{ site.email }}</a>
+                </li>
+                <li>
+                    <svg aria-hidden="true"><use href="#i-pin"></use></svg>
+                    <span>{{ site.address }}</span>
+                </li>
+                <li>
+                    <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+                    <span>{{ site.hours }}</span>
+                </li>
+            </ul>
+        </div>
+
+        {% if social_links %}
+        <div>
+            <h3>Follow Us</h3>
+            <ul class="social-row">
+                {% comment %}
+                A published row shows its icon even before an address has been
+                added; `href` falls back to "#" so there is never a broken or
+                empty link. aria-disabled marks the placeholder for assistive
+                tech, since it looks like a link but goes nowhere.
+                {% endcomment %}
+                {% for social in social_links %}
+                    <li>
+                        <a href="{{ social.href }}"
+                           aria-label="{{ site.name }} on {{ social.label }}"
+                           {% if social.has_link %}rel="noopener" target="_blank"{% else %}aria-disabled="true" class="is-placeholder"{% endif %}>
+                            <svg aria-hidden="true"><use href="#i-{{ social.icon }}"></use></svg>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer-bar">
+        <div class="shell footer-bar__inner">
+            <p>
+                &copy; {% now "Y" %} {{ site.name }}. All Rights Reserved.{% if site.abn %}
+                <span class="text-muted">ABN {{ site.abn }}</span>{% endif %}
+            </p>
+            <div class="footer-bar__links">
+                <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                <span aria-hidden="true">|</span>
+                <a href="{% url 'terms' %}">Terms &amp; Conditions</a>
+            </div>
+        </div>
+    </div>
+</footer>

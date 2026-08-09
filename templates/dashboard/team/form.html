@@ -1,0 +1,123 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block toolbar_actions %}
+    {% if object and object.is_published %}
+        <a href="{{ object.get_absolute_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-light">
+            <i class="ki-outline ki-eye fs-4 me-1"></i>View profile
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+{% comment %}
+enctype is required - without it the browser posts field names only and the
+uploaded photo is silently dropped.
+{% endcomment %}
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger p-5 mb-6" role="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="row g-5 g-xl-8">
+        <div class="col-xl-8">
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Who they are</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.name %}
+                    {% include "dashboard/partials/field.html" with field=form.role %}
+                    {% include "dashboard/partials/field.html" with field=form.bio %}
+                </div>
+            </div>
+
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title flex-column">
+                        <h3 class="fw-bold mb-1">Qualifications &amp; checks</h3>
+                        <span class="text-muted fs-7">One per line &mdash; each becomes a tick</span>
+                    </div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.qualifications %}
+                </div>
+            </div>
+
+            <div class="card card-flush">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Web address</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.slug %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Visibility</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    <div class="form-check form-switch form-check-custom form-check-solid mb-6">
+                        {{ form.is_published }}
+                        <label class="form-check-label fw-semibold text-gray-700" for="{{ form.is_published.id_for_label }}">
+                            Published
+                        </label>
+                    </div>
+                    {% include "dashboard/partials/field.html" with field=form.order %}
+                </div>
+            </div>
+
+            <div class="card card-flush">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Photo</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    <div class="mb-4">
+                        <img id="photo-preview"
+                             src="{% if object %}{{ object.photo_url }}{% else %}{% static 'images/team-placeholder.svg' %}{% endif %}"
+                             alt="" class="w-100 rounded-circle" style="aspect-ratio: 1; object-fit: cover">
+                        {% if object and not object.has_uploaded_photo %}
+                            <div class="form-text text-center">Currently using the built-in placeholder.</div>
+                        {% endif %}
+                    </div>
+
+                    {% include "dashboard/partials/field.html" with field=form.photo %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-3 py-8">
+        <a href="{% url 'dashboard:team_list' %}" class="btn btn-light">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+            {% if object %}Save changes{% else %}Add to team{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Show the newly picked photo before saving.
+    (function () {
+        var input = document.getElementById("{{ form.photo.auto_id }}");
+        var preview = document.getElementById("photo-preview");
+        if (!input || !preview) return;
+
+        input.addEventListener("change", function () {
+            var file = this.files && this.files[0];
+            if (!file) return;
+            var url = URL.createObjectURL(file);
+            preview.src = url;
+            preview.addEventListener("load", function () {
+                URL.revokeObjectURL(url);
+            }, { once: true });
+        });
+    })();
+</script>
+{% endblock %}

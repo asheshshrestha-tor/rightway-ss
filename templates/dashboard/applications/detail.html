@@ -1,0 +1,115 @@
+{% extends "dashboard/base.html" %}
+
+{% block toolbar_actions %}
+    <a href="{% url 'dashboard:application_resume' application.pk %}" class="btn btn-sm btn-primary">
+        <i class="ki-outline ki-file-down fs-4 me-1"></i>Download Resume
+    </a>
+    <a href="mailto:{{ application.email }}?subject=Your%20application%20-%20{{ application.role_label|urlencode }}"
+       class="btn btn-sm btn-light">
+        <i class="ki-outline ki-sms fs-4 me-1"></i>Email
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-5 g-xl-8">
+    <div class="col-xl-8">
+        <div class="card card-flush">
+            <div class="card-header pt-6">
+                <div class="card-title flex-column">
+                    <h3 class="fw-bold mb-1">{{ application.full_name }}</h3>
+                    <span class="text-muted fs-7">Applied {{ application.created_at|date:"l j F Y, g:i a" }}</span>
+                </div>
+                <div class="card-toolbar">
+                    <span class="badge badge-light-{{ application.status_css }} fs-7 fw-bold">
+                        {{ application.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body pt-4">
+                <div class="row mb-8">
+                    <div class="col-sm-4 mb-5 mb-sm-0">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Applied for</div>
+                        {% if application.vacancy %}
+                            <a href="{% url 'dashboard:vacancy_update' application.vacancy.pk %}" class="fw-bold fs-6">
+                                {{ application.role_label }}
+                            </a>
+                        {% else %}
+                            <span class="fw-bold fs-6">{{ application.role_label }}</span>
+                            {% if application.vacancy_title %}
+                                <div class="text-muted fs-8">The vacancy has since been removed.</div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-4 mb-5 mb-sm-0">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Email</div>
+                        <a href="mailto:{{ application.email }}" class="fw-bold fs-6">{{ application.email }}</a>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Phone</div>
+                        {% if application.phone %}
+                            <a href="tel:{{ application.phone }}" class="fw-bold fs-6">{{ application.phone }}</a>
+                        {% else %}
+                            <span class="text-muted fs-6">Not provided</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-muted fw-semibold fs-8 text-uppercase mb-2">Resume</div>
+                <a href="{% url 'dashboard:application_resume' application.pk %}"
+                   class="d-flex align-items-center bg-light rounded p-4 mb-8 text-hover-primary">
+                    <i class="ki-outline ki-file fs-2tx text-primary me-4"></i>
+                    <div>
+                        <span class="fw-bold fs-6 d-block">{{ application.resume_name }}</span>
+                        <span class="text-muted fs-7">Click to download</span>
+                    </div>
+                </a>
+
+                <div class="text-muted fw-semibold fs-8 text-uppercase mb-2">Cover letter</div>
+                {% if application.cover_letter %}
+                    <div class="bg-light rounded p-6 fs-6 text-gray-800" style="white-space: pre-wrap">{{ application.cover_letter }}</div>
+                {% else %}
+                    <p class="text-muted fs-7 mb-0">No cover letter was provided.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card card-flush">
+            <div class="card-header pt-6">
+                <div class="card-title"><h3 class="fw-bold m-0">Progress</h3></div>
+            </div>
+            <div class="card-body pt-4">
+                {% if can_edit %}
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% include "dashboard/partials/field.html" with field=form.status %}
+                        {% include "dashboard/partials/field.html" with field=form.handled_by %}
+                        {% include "dashboard/partials/field.html" with field=form.notes %}
+                        <button type="submit" class="btn btn-primary w-100">Save</button>
+                    </form>
+                {% else %}
+                    <div class="mb-5">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Assigned to</div>
+                        <span class="fw-bold fs-6">{{ application.handled_by.username|default:"Unassigned" }}</span>
+                    </div>
+                    <div>
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Notes</div>
+                        <p class="fs-7 text-gray-700 mb-0">{{ application.notes|default:"No notes."|linebreaksbr }}</p>
+                    </div>
+                    <div class="notice bg-light-warning rounded border-warning border border-dashed p-4 mt-6">
+                        <span class="fs-8 text-gray-700">You have read-only access to applications.</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <a href="{% url 'dashboard:application_list' %}" class="btn btn-light w-100">
+                <i class="ki-outline ki-arrow-left fs-4 me-1"></i>Back to applications
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

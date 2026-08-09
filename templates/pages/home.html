@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ site.name }} | NDIS Support in Toowoomba{% endblock %}
+{% block body_class %}home{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            <h1>Supporting You <span>to Live Life<br>Your Way</span></h1>
+            <p class="lead">Compassionate NDIS support services that empower you to live independently, connect with your community and achieve your goals.</p>
+            <div class="hero-actions">
+                <a class="btn btn--primary" href="{% url 'services' %}">
+                    Our Services
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+                <a class="btn btn--outline" href="{% url 'contact' %}">
+                    Contact Us
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-media hero-media--leaf">
+            <img src="{% static 'images/hero-home.png' %}" alt="A support worker sitting and talking with a participant at home">
+            <div class="ndis-badge">
+                <span class="ndis-badge__mark">ndis</span>
+                <span class="ndis-badge__text">Registered<br>NDIS Provider</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% include "partials/feature_strip.html" with features=why_us %}
+
+<section class="section section--tintwash">
+    <div class="shell">
+        <div class="section-head section-head--row">
+            <div>
+                <h2>Our Services</h2>
+                <p>Support designed around you.</p>
+            </div>
+            <a class="btn btn--outline btn--sm" href="{% url 'services' %}">
+                View All Services
+                <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+            </a>
+        </div>
+
+        <div class="card-grid card-grid--4">
+            {% for service in featured_services %}
+                <article class="card">
+                    <a class="card__media" href="{{ service.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+                        <img src="{{ service.image_url }}" alt="">
+                    </a>
+                    <div class="card__body">
+                        <h3><a href="{{ service.get_absolute_url }}">{{ service.title }}</a></h3>
+                        <p>{{ service.summary }}</p>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="text-center">Our services will be listed here shortly.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="We're Here to Help You" cta_text="Let's work together to achieve your goals." cta_icon="hand-heart" %}
+{% endblock %}

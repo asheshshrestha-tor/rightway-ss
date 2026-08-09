@@ -1,0 +1,10 @@
+Django>=5.0,<6.0
+Pillow>=10.0.0
+
+# Reads .env and parses DATABASE_URL / EMAIL_URL into Django settings.
+django-environ>=0.11,<1.0
+
+# MySQL driver. Needs a C compiler and the MySQL client headers to build from
+# source; on Windows pip installs a prebuilt wheel, so no toolchain is needed.
+# Drop this line if the project stays on SQLite.
+mysqlclient>=2.2,<3.0

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}NDIS Support | {{ site.name }}{% endblock %}
+{% block meta_description %}As a registered NDIS provider we deliver support tailored to your goals and needs under your NDIS plan, including plan management support, support coordination and capacity building.{% endblock %}
+{% block body_class %}ndis{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            {% include "partials/breadcrumbs.html" with current="NDIS Support" %}
+            <h1>NDIS Support <span>We're Here to Help</span></h1>
+            <p class="lead">As a registered NDIS provider, we deliver support that is tailored to your goals and needs under your NDIS plan.</p>
+            <ul class="check-list">
+                {% for item in ndis_highlights %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            <div class="hero-actions">
+                <a class="btn btn--primary" href="{% url 'consultation' %}">
+                    Book a Free Consultation
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-media hero-media--oval">
+            <img src="{% static 'images/hero-ndis.png' %}" alt="A support worker helping a participant who uses a wheelchair">
+            <div class="ndis-badge">
+                <span class="ndis-badge__mark">ndis</span>
+                <span class="ndis-badge__text">Registered<br>NDIS Provider</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="how-we-support-you">
+    <div class="shell">
+        <div class="section-head section-head--center">
+            <h2>How We Support You</h2>
+        </div>
+        <div class="step-grid">
+            {% for step in ndis_steps %}
+                <div class="step">
+                    <span class="step__icon">
+                        <svg aria-hidden="true"><use href="#i-{{ step.icon }}"></use></svg>
+                    </span>
+                    <h3>{{ step.title }}</h3>
+                    <p>{{ step.text }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section--tight">
+    <div class="shell card-grid card-grid--2">
+        <div>
+            <h2>NDIS Support Services</h2>
+            <ul class="check-list">
+                {% for item in ndis_services %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="panel panel-with-art">
+            <div>
+                <h2>Let's Work Together</h2>
+                <p>We'll help you make the most of your NDIS plan and get the support you need to live life your way.</p>
+                <p class="mt-lg">
+                    <a class="btn btn--primary" href="{% url 'consultation' %}">
+                        Book a Free Consultation
+                        <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                    </a>
+                </p>
+            </div>
+            <span class="panel__art">
+                <svg width="110" height="110" aria-hidden="true"><use href="#i-hand-heart"></use></svg>
+            </span>
+        </div>
+    </div>
+</section>
+{% endblock %}

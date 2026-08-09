@@ -1,0 +1,118 @@
+{% extends "dashboard/base.html" %}
+
+{% block toolbar_actions %}
+    {% if perms.pages.add_vacancy %}
+        <a href="{% url 'dashboard:vacancy_create' %}" class="btn btn-sm btn-primary">
+            <i class="ki-outline ki-plus fs-4 me-1"></i>Add Vacancy
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card card-flush">
+    <div class="card-header pt-6 gap-3 flex-wrap">
+        <form method="get" class="card-title d-flex align-items-center gap-3 flex-wrap m-0">
+            <div class="d-flex align-items-center position-relative">
+                <i class="ki-outline ki-magnifier fs-3 position-absolute ms-4 text-gray-500"></i>
+                <input type="search" name="q" value="{{ query }}" class="form-control form-control-solid w-250px ps-12"
+                       placeholder="Search vacancies" aria-label="Search vacancies">
+            </div>
+
+            <select name="state" class="form-select form-select-solid w-175px" aria-label="Filter by state">
+                <option value="">All vacancies</option>
+                <option value="open" {% if state == "open" %}selected{% endif %}>Open</option>
+                <option value="closed" {% if state == "closed" %}selected{% endif %}>Closed (past date)</option>
+                <option value="draft" {% if state == "draft" %}selected{% endif %}>Unpublished</option>
+            </select>
+
+            <button type="submit" class="btn btn-light-primary">Filter</button>
+            {% if query or state %}
+                <a href="{% url 'dashboard:vacancy_list' %}" class="btn btn-light">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card-body pt-0">
+        <div class="table-responsive">
+            <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+                <thead>
+                    <tr class="fw-bold text-muted fs-7 text-uppercase">
+                        <th class="w-60px">Order</th>
+                        <th class="min-w-250px">Vacancy</th>
+                        <th class="min-w-125px d-none d-lg-table-cell">Closing</th>
+                        <th class="min-w-100px">Applications</th>
+                        <th class="min-w-100px">Status</th>
+                        <th class="text-end min-w-125px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vacancy in page_obj %}
+                        <tr>
+                            <td class="text-gray-600 fw-semibold">{{ vacancy.order }}</td>
+                            <td>
+                                <span class="text-gray-800 fw-bold fs-6 d-block">{{ vacancy.title }}</span>
+                                <span class="text-muted fw-semibold fs-7">{{ vacancy.detail_line }}</span>
+                            </td>
+                            <td class="text-gray-600 fw-semibold fs-7 d-none d-lg-table-cell">
+                                {{ vacancy.closing_date|date:"j M Y"|default:"No closing date" }}
+                            </td>
+                            <td>
+                                {% if vacancy.application_count %}
+                                    <a href="{% url 'dashboard:application_list' %}?vacancy={{ vacancy.pk }}"
+                                       class="badge badge-light-info fw-bold">
+                                        {{ vacancy.application_count }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted fs-7">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not vacancy.is_published %}
+                                    <span class="badge badge-light-warning fw-bold">Draft</span>
+                                {% elif vacancy.is_closed %}
+                                    <span class="badge badge-light-danger fw-bold">Closed</span>
+                                {% else %}
+                                    <span class="badge badge-light-primary fw-bold">Open</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if vacancy.is_published %}
+                                    <a href="{{ vacancy.get_absolute_url }}" target="_blank" rel="noopener"
+                                       class="btn btn-icon btn-light btn-sm me-1" title="View on the website">
+                                        <i class="ki-outline ki-eye fs-4"></i>
+                                    </a>
+                                {% endif %}
+                                {% if perms.pages.change_vacancy %}
+                                    <a href="{% url 'dashboard:vacancy_update' vacancy.pk %}" class="btn btn-icon btn-light btn-sm me-1" title="Edit">
+                                        <i class="ki-outline ki-pencil fs-4"></i>
+                                    </a>
+                                {% endif %}
+                                {% if perms.pages.delete_vacancy %}
+                                    <a href="{% url 'dashboard:vacancy_delete' vacancy.pk %}" class="btn btn-icon btn-light-danger btn-sm" title="Delete">
+                                        <i class="ki-outline ki-trash fs-4"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-10">
+                                {% if query or state %}
+                                    No vacancies match this search.
+                                {% else %}
+                                    No vacancies yet.
+                                    {% if perms.pages.add_vacancy %}
+                                        <a href="{% url 'dashboard:vacancy_create' %}">Advertise the first role</a>.
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "dashboard/partials/pagination.html" %}
+    </div>
+</div>
+{% endblock %}

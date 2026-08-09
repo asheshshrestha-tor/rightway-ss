@@ -1,0 +1,92 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<div class="row g-5 g-xl-8">
+    <div class="col-xl-8">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="card card-flush">
+                <div class="card-header pt-6">
+                    <div class="card-title flex-column">
+                        <h3 class="fw-bold mb-1">Your details</h3>
+                        <span class="text-muted fs-7">Signed in as <strong>{{ request.user.get_username }}</strong></span>
+                    </div>
+                </div>
+                <div class="card-body pt-4">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger p-5 mb-6" role="alert">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">{% include "dashboard/partials/field.html" with field=form.first_name %}</div>
+                        <div class="col-md-6">{% include "dashboard/partials/field.html" with field=form.last_name %}</div>
+                    </div>
+                    {% include "dashboard/partials/field.html" with field=form.email %}
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card card-flush mb-5 mb-xl-8">
+            <div class="card-header pt-6">
+                <div class="card-title"><h3 class="fw-bold m-0">Password</h3></div>
+            </div>
+            <div class="card-body pt-4">
+                <p class="text-muted fs-7">
+                    Choose a password you don't use anywhere else. You'll stay
+                    signed in after changing it.
+                </p>
+                <a href="{% url 'dashboard:password_change' %}" class="btn btn-light-primary w-100">
+                    <i class="ki-outline ki-lock-2 fs-4 me-1"></i>Change password
+                </a>
+            </div>
+        </div>
+
+        <div class="card card-flush">
+            <div class="card-header pt-6">
+                <div class="card-title"><h3 class="fw-bold m-0">Your access</h3></div>
+            </div>
+            <div class="card-body pt-4">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <span class="text-gray-700 fw-semibold fs-7">Level</span>
+                    {% if request.user.is_superuser %}
+                        <span class="badge badge-light-success fw-bold">Full administrator</span>
+                    {% else %}
+                        <span class="badge badge-light-primary fw-bold">Staff</span>
+                    {% endif %}
+                </div>
+
+                <div class="separator my-4"></div>
+
+                <span class="text-gray-700 fw-semibold fs-7 d-block mb-3">Roles</span>
+                {% for group in request.user.groups.all %}
+                    <span class="badge badge-light-info fw-semibold me-1 mb-1">{{ group.name }}</span>
+                {% empty %}
+                    <span class="text-muted fs-7">
+                        {% if request.user.is_superuser %}
+                            Full administrators have every permission, so roles do not apply.
+                        {% else %}
+                            No roles assigned.
+                        {% endif %}
+                    </span>
+                {% endfor %}
+
+                <div class="separator my-4"></div>
+
+                <form method="post" action="{% url 'dashboard:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-light-danger w-100">
+                        <i class="ki-outline ki-exit-right fs-4 me-1"></i>Sign out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+<div id="kt_app_footer" class="app-footer">
+    <div class="app-container container-xxl d-flex flex-column flex-md-row flex-center flex-md-stack py-3">
+        <div class="text-gray-900 order-2 order-md-1">
+            <span class="text-muted fw-semibold me-1">&copy; {% now "Y" %}</span>
+            <a href="{% url 'home' %}" target="_blank" rel="noopener" class="text-gray-800 text-hover-primary">Rightway Support Services</a>
+        </div>
+        <ul class="menu menu-gray-600 menu-hover-primary fw-semibold order-1">
+            <li class="menu-item"><a href="{% url 'privacy_policy' %}" target="_blank" rel="noopener" class="menu-link px-2">Privacy</a></li>
+            <li class="menu-item"><a href="{% url 'terms' %}" target="_blank" rel="noopener" class="menu-link px-2">Terms</a></li>
+            <li class="menu-item"><a href="{% url 'contact' %}" target="_blank" rel="noopener" class="menu-link px-2">Contact</a></li>
+        </ul>
+    </div>
+</div>

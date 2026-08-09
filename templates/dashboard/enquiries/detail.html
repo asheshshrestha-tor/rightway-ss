@@ -1,0 +1,82 @@
+{% extends "dashboard/base.html" %}
+
+{% block toolbar_actions %}
+    <a href="mailto:{{ enquiry.email }}?subject=Re:%20your%20enquiry" class="btn btn-sm btn-primary">
+        <i class="ki-outline ki-sms fs-4 me-1"></i>Reply by Email
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-5 g-xl-8">
+    <div class="col-xl-8">
+        <div class="card card-flush">
+            <div class="card-header pt-6">
+                <div class="card-title flex-column">
+                    <h3 class="fw-bold mb-1">{{ enquiry.name }}</h3>
+                    <span class="text-muted fs-7">Received {{ enquiry.created_at|date:"l j F Y, g:i a" }}</span>
+                </div>
+                <div class="card-toolbar">
+                    <span class="badge badge-light-{{ enquiry.status_css }} fs-7 fw-bold">{{ enquiry.get_status_display }}</span>
+                </div>
+            </div>
+
+            <div class="card-body pt-4">
+                <div class="row mb-8">
+                    <div class="col-sm-6 mb-5 mb-sm-0">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Email</div>
+                        <a href="mailto:{{ enquiry.email }}" class="fw-bold fs-6">{{ enquiry.email }}</a>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Phone</div>
+                        {% if enquiry.phone %}
+                            <a href="tel:{{ enquiry.phone }}" class="fw-bold fs-6">{{ enquiry.phone }}</a>
+                        {% else %}
+                            <span class="text-muted fs-6">Not provided</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-muted fw-semibold fs-8 text-uppercase mb-2">Message</div>
+                <div class="bg-light rounded p-6 fs-6 text-gray-800" style="white-space: pre-wrap">{{ enquiry.message }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card card-flush">
+            <div class="card-header pt-6">
+                <div class="card-title"><h3 class="fw-bold m-0">Handling</h3></div>
+            </div>
+            <div class="card-body pt-4">
+                {% if can_edit %}
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% include "dashboard/partials/field.html" with field=form.status %}
+                        {% include "dashboard/partials/field.html" with field=form.handled_by %}
+                        {% include "dashboard/partials/field.html" with field=form.notes %}
+                        <button type="submit" class="btn btn-primary w-100">Save</button>
+                    </form>
+                {% else %}
+                    <div class="mb-5">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Assigned to</div>
+                        <span class="fw-bold fs-6">{{ enquiry.handled_by.username|default:"Unassigned" }}</span>
+                    </div>
+                    <div>
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Notes</div>
+                        <p class="fs-7 text-gray-700 mb-0">{{ enquiry.notes|default:"No notes."|linebreaksbr }}</p>
+                    </div>
+                    <div class="notice bg-light-warning rounded border-warning border border-dashed p-4 mt-6">
+                        <span class="fs-8 text-gray-700">You have read-only access to enquiries.</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <a href="{% url 'dashboard:enquiry_list' %}" class="btn btn-light w-100">
+                <i class="ki-outline ki-arrow-left fs-4 me-1"></i>Back to enquiries
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

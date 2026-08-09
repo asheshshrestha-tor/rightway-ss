@@ -1,0 +1,286 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% comment %}
+Every block here is conditional on the same permission as the screen it links
+to. The view only builds (and only queries) what the viewer may see, so an
+absent key means "not allowed", not "nothing to report".
+{% endcomment %}
+
+{% block content %}
+
+{% if nothing_to_show %}
+    <div class="card card-flush">
+        <div class="card-body text-center py-20">
+            <span class="symbol symbol-70px mb-6">
+                <span class="symbol-label bg-light-primary">
+                    <i class="ki-outline ki-shield-tick fs-2tx text-primary"></i>
+                </span>
+            </span>
+            <h2 class="fw-bold text-gray-900 mb-3">Welcome, {{ request.user.get_full_name|default:request.user.get_username }}</h2>
+            <p class="text-muted fs-6 mb-8" style="max-width: 34rem; margin-inline: auto">
+                Your account has dashboard access, but no sections have been
+                assigned to it yet. Ask an administrator to give your account a
+                role, and the areas you need will appear here.
+            </p>
+            <a href="{% url 'dashboard:account' %}" class="btn btn-primary">My Account</a>
+        </div>
+    </div>
+{% else %}
+
+    {% if tiles %}
+        <div class="row g-5 g-xl-8 mb-5 mb-xl-8">
+            {% for tile in tiles %}
+                <div class="col-sm-6 col-xl-3">
+                    <a href="{{ tile.url }}" class="card card-flush h-100 text-hover-primary">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div class="d-flex align-items-center mb-4">
+                                <span class="symbol symbol-45px me-4">
+                                    <span class="symbol-label bg-light-{{ tile.tone }}">
+                                        <i class="ki-outline {{ tile.icon }} fs-2x text-{{ tile.tone }}"></i>
+                                    </span>
+                                </span>
+                                <span class="fs-2hx fw-bold text-gray-900 lh-1">{{ tile.value }}</span>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-6 text-gray-900">{{ tile.label }}</div>
+                                <div class="fw-semibold text-muted fs-7">{{ tile.hint }}</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="row g-5 g-xl-8 mb-5 mb-xl-8">
+        {% if chart %}
+            <div class="col-xl-8">
+                <div class="card card-flush h-100">
+                    <div class="card-header pt-6">
+                        <div class="card-title flex-column">
+                            <h3 class="fw-bold mb-1">Enquiries Received</h3>
+                            <span class="text-muted fs-7">Last {{ chart.days }} days</span>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2 pb-4">
+                        {# Chart data is handed to JS as JSON rather than interpolated into a script block. #}
+                        {{ chart|json_script:"enquiry-chart-data" }}
+                        <div id="kt_dashboard_enquiries_chart" class="min-h-auto" style="height: 320px"></div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if status_counts or content_rows or roles %}
+            <div class="{% if chart %}col-xl-4{% else %}col-12{% endif %}">
+                <div class="card card-flush h-100">
+                    <div class="card-header pt-6">
+                        <div class="card-title flex-column">
+                            <h3 class="fw-bold mb-1">At a Glance</h3>
+                            <span class="text-muted fs-7">What's live on the website</span>
+                        </div>
+                    </div>
+                    <div class="card-body pt-4">
+                        {% for label, count, css in status_counts %}
+                            <div class="d-flex align-items-center mb-6">
+                                <span class="bullet bullet-vertical h-40px bg-{{ css }} me-4"></span>
+                                <div class="flex-grow-1">
+                                    <span class="text-gray-800 fw-bold fs-6 d-block">{{ label }}</span>
+                                    <span class="text-muted fw-semibold fs-7">
+                                        {% if enquiries_total %}
+                                            {% widthratio count enquiries_total 100 %}% of enquiries
+                                        {% else %}No enquiries yet{% endif %}
+                                    </span>
+                                </div>
+                                <span class="badge badge-light-{{ css }} fs-6 fw-bold">{{ count }}</span>
+                            </div>
+                        {% endfor %}
+
+                        {% if status_counts and content_rows %}
+                            <div class="separator my-5"></div>
+                        {% endif %}
+
+                        {% for row in content_rows %}
+                            <a href="{{ row.url }}" class="d-flex align-items-center justify-content-between py-2 text-hover-primary">
+                                <span class="text-gray-800 fw-semibold fs-7">{{ row.label }}</span>
+                                <span>
+                                    <span class="badge badge-light-primary fw-bold">{{ row.live }} live</span>
+                                    {% if row.draft %}
+                                        <span class="badge badge-light-warning fw-bold ms-1">{{ row.draft }} draft</span>
+                                    {% endif %}
+                                </span>
+                            </a>
+                        {% endfor %}
+
+                        {% if roles and status_counts or roles and content_rows %}
+                            <div class="separator my-5"></div>
+                        {% endif %}
+
+                        {% for role in roles %}
+                            <div class="d-flex align-items-center justify-content-between py-2">
+                                <span class="text-gray-700 fw-semibold fs-7">{{ role.name }}</span>
+                                <span class="badge badge-light fw-bold">{{ role.member_count }} user{{ role.member_count|pluralize }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="row g-5 g-xl-8">
+        {% if upcoming_consultations is not None %}
+            <div class="col-xl-6">
+                <div class="card card-flush h-100">
+                    <div class="card-header pt-6">
+                        <div class="card-title flex-column">
+                            <h3 class="fw-bold mb-1">Upcoming Consultations</h3>
+                            <span class="text-muted fs-7">Confirmed appointments</span>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'dashboard:consultation_list' %}" class="btn btn-sm btn-light">View all</a>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2">
+                        {% for booking in upcoming_consultations %}
+                            <div class="d-flex align-items-center mb-5">
+                                <span class="symbol symbol-40px me-4">
+                                    <span class="symbol-label bg-light-success">
+                                        <i class="ki-outline ki-calendar-tick fs-4 text-success"></i>
+                                    </span>
+                                </span>
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'dashboard:consultation_detail' booking.pk %}" class="text-gray-800 fw-bold fs-6 d-block text-hover-primary">
+                                        {{ booking.full_name }}
+                                    </a>
+                                    <span class="text-muted fw-semibold fs-7">{{ booking.location_line }}</span>
+                                </div>
+                                <span class="text-gray-700 fw-semibold fs-7">{{ booking.scheduled_for|date:"j M, g:i a" }}</span>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted fs-7 mb-0">Nothing booked in yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if recent_enquiries is not None %}
+            <div class="col-xl-6">
+                <div class="card card-flush h-100">
+                    <div class="card-header pt-6">
+                        <div class="card-title flex-column">
+                            <h3 class="fw-bold mb-1">Recent Enquiries</h3>
+                            <span class="text-muted fs-7">Newest first</span>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'dashboard:enquiry_list' %}" class="btn btn-sm btn-light">View all</a>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2">
+                        <div class="table-responsive">
+                            <table class="table table-row-dashed align-middle gs-0 gy-3 my-0">
+                                <tbody>
+                                    {% for enquiry in recent_enquiries %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'dashboard:enquiry_detail' enquiry.pk %}" class="text-gray-800 fw-bold text-hover-primary fs-6 d-block">{{ enquiry.name }}</a>
+                                                <span class="text-muted fw-semibold fs-7">{{ enquiry.created_at|date:"j M Y, g:i a" }}</span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="badge badge-light-{{ enquiry.status_css }} fw-bold">{{ enquiry.get_status_display }}</span>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr><td class="text-muted fs-7">No enquiries yet.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if recent_applications is not None %}
+            <div class="col-xl-6">
+                <div class="card card-flush h-100">
+                    <div class="card-header pt-6">
+                        <div class="card-title flex-column">
+                            <h3 class="fw-bold mb-1">Recent Applications</h3>
+                            <span class="text-muted fs-7">Newest first</span>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'dashboard:application_list' %}" class="btn btn-sm btn-light">View all</a>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2">
+                        {% for application in recent_applications %}
+                            <div class="d-flex align-items-center mb-5">
+                                <span class="symbol symbol-40px me-4">
+                                    <span class="symbol-label bg-light-info text-info fw-bold fs-8">
+                                        {{ application.full_name|slice:":2"|upper }}
+                                    </span>
+                                </span>
+                                <div class="flex-grow-1">
+                                    <a href="{% url 'dashboard:application_detail' application.pk %}" class="text-gray-800 fw-bold fs-6 d-block text-hover-primary">
+                                        {{ application.full_name }}
+                                    </a>
+                                    <span class="text-muted fw-semibold fs-7">{{ application.role_label }}</span>
+                                </div>
+                                <span class="badge badge-light-{{ application.status_css }} fw-bold">{{ application.get_status_display }}</span>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted fs-7 mb-0">No applications yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if recent_users is not None %}
+            <div class="col-xl-6">
+                <div class="card card-flush h-100">
+                    <div class="card-header pt-6">
+                        <div class="card-title flex-column">
+                            <h3 class="fw-bold mb-1">Newest Users</h3>
+                            <span class="text-muted fs-7">Most recently added</span>
+                        </div>
+                        <div class="card-toolbar">
+                            <a href="{% url 'dashboard:user_list' %}" class="btn btn-sm btn-light">Manage</a>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2">
+                        {% for user in recent_users %}
+                            <div class="d-flex align-items-center mb-5">
+                                <div class="symbol symbol-40px me-4">
+                                    <span class="symbol-label bg-light-primary text-primary fw-bold">{{ user.username|slice:":2"|upper }}</span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span class="text-gray-800 fw-bold fs-6 d-block">{{ user.get_full_name|default:user.username }}</span>
+                                    <span class="text-muted fw-semibold fs-7">Joined {{ user.date_joined|date:"j M Y" }}</span>
+                                </div>
+                                {% if user.is_superuser %}
+                                    <span class="badge badge-light-success fw-bold">Admin</span>
+                                {% elif user.is_staff %}
+                                    <span class="badge badge-light-primary fw-bold">Staff</span>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-muted fs-7 mb-0">No users yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+    {% if chart %}
+        <script src="{% static 'dashboard/js/enquiry-chart.js' %}"></script>
+    {% endif %}
+{% endblock %}

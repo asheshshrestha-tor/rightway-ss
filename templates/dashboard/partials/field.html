@@ -1,0 +1,20 @@
+{% comment %}
+Renders one bound form field with a Metronic label, the widget itself (already
+carrying its CSS classes from dashboard.forms), help text and errors.
+
+Usage: {% include "dashboard/partials/field.html" with field=form.username %}
+{% endcomment %}
+<div class="fv-row mb-6">
+    <label class="form-label {% if field.field.required %}required{% endif %}" for="{{ field.id_for_label }}">
+        {{ field.label }}
+    </label>
+    {{ field }}
+    {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+    {% endif %}
+    {% if field.errors %}
+        <ul class="field-errors">
+            {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+</div>

@@ -1,0 +1,111 @@
+{% load static %}
+{% comment %}
+Metronic demo29 dual sidebar. `nav_items` and `nav_section_label` come from
+dashboard.navigation.context, which filters links by permission and works out
+the active section from request.path.
+{% endcomment %}
+<div id="kt_app_sidebar" class="app-sidebar"
+     data-kt-drawer="true"
+     data-kt-drawer-name="app-sidebar"
+     data-kt-drawer-activate="{default: true, lg: false}"
+     data-kt-drawer-overlay="true"
+     data-kt-drawer-width="auto"
+     data-kt-drawer-direction="start"
+     data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+
+    <!--begin::Sidebar primary (icon rail)-->
+    <div class="app-sidebar-primary">
+        <div class="app-sidebar-logo d-none d-md-flex flex-center pt-8 mb-5 mb-lg-10" id="kt_app_sidebar_logo">
+            <a href="{% url 'dashboard:index' %}" title="Rightway Support Services">
+                <span class="brand-mark d-flex flex-center">RS</span>
+            </a>
+        </div>
+
+        <div class="app-sidebar-menu flex-grow-1 hover-scroll-overlay-y scroll-ps mx-2 my-5" id="kt_aside_menu_wrapper"
+             data-kt-scroll="true" data-kt-scroll-height="auto"
+             data-kt-scroll-dependencies="#kt_app_sidebar_logo, #kt_app_sidebar_footer"
+             data-kt-scroll-wrappers="#kt_app_sidebar_menu" data-kt-scroll-offset="5px">
+            <div id="kt_aside_menu" class="menu menu-rounded menu-column menu-title-gray-600 menu-state-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-500 fw-semibold fs-6" data-kt-menu="true">
+
+                {% for item in nav_items %}
+                    <div class="menu-item py-2 {% if item.active %}here show{% endif %}"
+                         data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="right-start">
+                        <span class="menu-link menu-center" title="{{ item.label }}">
+                            <span class="menu-icon me-0">
+                                <i class="ki-outline {{ item.icon }} fs-2x"></i>
+                            </span>
+                        </span>
+                        <div class="menu-sub menu-sub-dropdown px-2 py-4 w-225px">
+                            <div class="menu-item">
+                                <div class="menu-content">
+                                    <span class="menu-section fs-5 fw-bolder ps-1 py-1">{{ item.label }}</span>
+                                </div>
+                            </div>
+                            {% for link in item.links %}
+                                <div class="menu-item">
+                                    <a class="menu-link {% if link.url == request.path %}active{% endif %}" href="{{ link.url }}">
+                                        <span class="menu-bullet"><span class="bullet bullet-dot"></span></span>
+                                        <span class="menu-title">{{ link.label }}</span>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="app-sidebar-footer d-flex flex-center flex-column-auto pb-8" id="kt_app_sidebar_footer">
+            <a href="{% url 'home' %}" target="_blank" rel="noopener"
+               class="btn btn-icon btn-color-white bg-white bg-opacity-10 bg-hover-opacity-20 w-40px h-40px"
+               title="Open the public website">
+                <i class="ki-outline ki-exit-right-corner fs-2"></i>
+            </a>
+        </div>
+    </div>
+    <!--end::Sidebar primary-->
+
+    <!--begin::Sidebar secondary (contextual menu)-->
+    <div class="app-sidebar-secondary">
+        <div class="d-flex flex-column">
+            <div class="d-flex flex-column pt-10 ps-11" id="kt_app_sidebar_secondary_header">
+                <span class="fs-7 fw-semibold text-gray-600 mb-1">Rightway Support Services</span>
+                <span class="fs-2 fw-bolder text-white">{{ nav_section_label }}</span>
+            </div>
+
+            <div class="app-sidebar-secondary-menu menu menu-sub-indention menu-rounded menu-column menu-active-bg menu-title-gray-600 menu-icon-gray-500 menu-state-primary menu-arrow-gray-500 fw-semibold fs-6 py-4 py-lg-6"
+                 id="kt_app_sidebar_secondary_menu" data-kt-menu="true">
+                <div id="kt_app_sidebar_secondary_menu_wrapper" class="hover-scroll-y px-3 mx-3"
+                     data-kt-scroll="true" data-kt-scroll-activate="{default: true, lg: true}"
+                     data-kt-scroll-height="auto"
+                     data-kt-scroll-dependencies="#kt_app_sidebar_secondary_header"
+                     data-kt-scroll-wrappers="#kt_app_sidebar_secondary_menu" data-kt-scroll-offset="20px">
+
+                    {% for item in nav_items %}
+                        <div class="menu-item">
+                            <div class="menu-content">
+                                <span class="menu-section fs-5 fw-bolder ps-1 py-1">{{ item.label }}</span>
+                            </div>
+                        </div>
+                        {% for link in item.links %}
+                            <div class="menu-item">
+                                <a class="menu-link {% if link.url == request.path %}active{% endif %}" href="{{ link.url }}">
+                                    <span class="menu-icon"><i class="ki-outline {{ link.icon }} fs-2"></i></span>
+                                    <span class="menu-title">{{ link.label }}</span>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end::Sidebar secondary-->
+
+    <button id="kt_app_sidebar_secondary_toggle"
+            class="app-sidebar-secondary-toggle btn btn-sm btn-icon bg-body btn-color-gray-600 btn-active-color-primary position-absolute translate-middle z-index-1 start-100 end-0 bottom-0 shadow-sm d-none d-lg-flex mb-4"
+            data-kt-toggle="true" data-kt-toggle-state="active" data-kt-toggle-target="body"
+            data-kt-toggle-name="app-sidebar-secondary-collapse">
+        <i class="ki-outline ki-arrow-left fs-2 rotate-180"></i>
+    </button>
+</div>

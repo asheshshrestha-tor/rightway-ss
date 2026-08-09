@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Our Services | {{ site.name }}{% endblock %}
+{% block meta_description %}Personal care, household tasks, community access and home & shared living - a wide range of NDIS support services designed to help you live independently and build skills.{% endblock %}
+{% block body_class %}services{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            {% include "partials/breadcrumbs.html" with current="Services" %}
+            <h1>Our Services <span>Support Tailored to You</span></h1>
+            <p class="lead">We provide a wide range of NDIS support services designed to help you live independently, build skills and achieve your goals.</p>
+            <div class="hero-actions">
+                <a class="btn btn--primary" href="{% url 'consultation' %}">
+                    Book a Free Consultation
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-media hero-media--oval">
+            <img src="{% static 'images/hero-services.png' %}" alt="A support worker assisting a participant outdoors in a park">
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="shell">
+        <h2 class="visually-hidden">Support categories</h2>
+        <div class="card-grid card-grid--2">
+            {% for service in service_list %}
+                <article class="service-card" id="{{ service.slug }}">
+                    <a class="service-card__media" href="{{ service.get_absolute_url }}" tabindex="-1" aria-hidden="true">
+                        <img src="{{ service.image_url }}" alt="">
+                        <span class="service-card__badge">
+                            <svg aria-hidden="true"><use href="#i-{{ service.icon }}"></use></svg>
+                        </span>
+                    </a>
+                    <div class="service-card__body">
+                        <h3><a href="{{ service.get_absolute_url }}">{{ service.title }}</a></h3>
+                        <p>{{ service.description }}</p>
+                        <a class="link-more" href="{{ service.get_absolute_url }}">
+                            Learn More
+                            <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                        </a>
+                    </div>
+                </article>
+            {% empty %}
+                <p>Our services will be listed here shortly. Please
+                   <a href="{% url 'contact' %}">get in touch</a> in the meantime.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% include "partials/feature_strip.html" with features=service_promises %}
+{% endblock %}

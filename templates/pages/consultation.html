@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Book a Free Consultation | {{ site.name }}{% endblock %}
+{% block meta_description %}Book a free, no-obligation consultation with Rightway Support Services. We'll talk through your goals and your NDIS plan, at your home or over the phone.{% endblock %}
+{% block body_class %}consultation{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            {% include "partials/breadcrumbs.html" with current="Book a Consultation" %}
+            <h1>Book a Free Consultation <span>No Cost, No Obligation</span></h1>
+            <p class="lead">
+                Tell us when suits you and we'll call within one business day to
+                confirm a time. We can meet at your home, or talk over the phone.
+            </p>
+            <ul class="check-list">
+                <li>Free and with no obligation to go ahead</li>
+                <li>We talk through your goals and your NDIS plan</li>
+                <li>No plan yet? We can still point you in the right direction</li>
+            </ul>
+        </div>
+
+        <div class="hero-media hero-media--leaf">
+            <img src="{% static 'images/hero-home.png' %}" alt="A support worker talking with a participant at home">
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="shell consultation-layout">
+        <div class="form-card" id="book">
+            <h2>Request your consultation</h2>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert--{% if message.tags == 'error' %}error{% else %}success{% endif %}" role="status">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert--error" role="alert">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <fieldset class="form-step">
+                    <legend><span>1</span> About you</legend>
+                    {% include "pages/partials/field.html" with field=form.full_name %}
+                    <div class="field-row">
+                        {% include "pages/partials/field.html" with field=form.email %}
+                        {% include "pages/partials/field.html" with field=form.phone %}
+                    </div>
+                    {% include "pages/partials/field.html" with field=form.enquirer_type %}
+                    {% include "pages/partials/field.html" with field=form.participant_name %}
+                </fieldset>
+
+                <fieldset class="form-step">
+                    <legend><span>2</span> What you need</legend>
+                    {% include "pages/partials/field.html" with field=form.plan_status %}
+
+                    <div class="field">
+                        <label>{{ form.services.label }}</label>
+                        <ul class="checkbox-grid">
+                            {% for checkbox in form.services %}
+                                <li>
+                                    <label class="checkbox-option">
+                                        {{ checkbox.tag }}
+                                        <span>{{ checkbox.choice_label }}</span>
+                                    </label>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        {% if form.services.errors %}
+                            <ul class="errorlist">{% for e in form.services.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+
+                    {% include "pages/partials/field.html" with field=form.goals %}
+                </fieldset>
+
+                <fieldset class="form-step">
+                    <legend><span>3</span> When and where</legend>
+                    {% include "pages/partials/field.html" with field=form.delivery %}
+
+                    <div class="field-row" data-home-only>
+                        {% include "pages/partials/field.html" with field=form.suburb %}
+                        {% include "pages/partials/field.html" with field=form.postcode %}
+                    </div>
+
+                    <div class="field-row">
+                        {% include "pages/partials/field.html" with field=form.preferred_date %}
+                        {% include "pages/partials/field.html" with field=form.preferred_window %}
+                    </div>
+                    <div class="field-row">
+                        {% include "pages/partials/field.html" with field=form.alternate_date %}
+                        {% include "pages/partials/field.html" with field=form.alternate_window %}
+                    </div>
+                </fieldset>
+
+                <button class="btn btn--primary btn--block" type="submit">
+                    Request My Consultation
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </button>
+
+                <p class="field-help mt-lg">
+                    We'll only use your details to arrange this consultation &mdash;
+                    see our <a href="{% url 'privacy_policy' %}">privacy policy</a>.
+                </p>
+            </form>
+        </div>
+
+        <aside class="consultation-aside">
+            <div class="panel">
+                <h2>What happens next</h2>
+                <ol class="numbered-list">
+                    <li><strong>You send this form.</strong> It takes about two minutes.</li>
+                    <li><strong>We call you</strong> within one business day to confirm a time.</li>
+                    <li><strong>We meet</strong> at your home or over the phone, whichever you chose.</li>
+                    <li><strong>You decide.</strong> There is no obligation to go ahead.</li>
+                </ol>
+            </div>
+
+            <div class="panel panel--white mt-lg">
+                <h2>Rather just talk?</h2>
+                <p>Call us during office hours and we'll book it there and then.</p>
+                <ul class="contact-list">
+                    <li class="contact-item">
+                        <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-phone"></use></svg></span>
+                        <div>
+                            <h3>Phone</h3>
+                            <a href="{{ site.phone_href }}">{{ site.phone }}</a>
+                        </div>
+                    </li>
+                    <li class="contact-item">
+                        <span class="contact-item__icon"><svg aria-hidden="true"><use href="#i-clock"></use></svg></span>
+                        <div>
+                            <h3>Office Hours</h3>
+                            <p>{{ site.hours }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Prefer to Ask a Question First?" cta_text="We're happy to help before you book anything." cta_label="Contact Us" cta_url="/contact/" cta_icon="question" %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Suburb and postcode only matter for a home visit. Hidden rather than
+    // removed, so the fields still post when the choice changes back.
+    (function () {
+        var delivery = document.getElementById("{{ form.delivery.auto_id }}");
+        var homeOnly = document.querySelector("[data-home-only]");
+        if (!delivery || !homeOnly) return;
+
+        function sync() {
+            homeOnly.hidden = delivery.value !== "home";
+        }
+        delivery.addEventListener("change", sync);
+        sync();
+    })();
+</script>
+{% endblock %}

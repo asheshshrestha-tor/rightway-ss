@@ -1,0 +1,135 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+{% if awaiting %}
+    <div class="notice bg-light-warning rounded border-warning border border-dashed p-6 mb-8 d-flex align-items-center">
+        <i class="ki-outline ki-notification-status fs-2tx text-warning me-4"></i>
+        <div class="fs-7 text-gray-700">
+            <strong>{{ awaiting }}</strong> consultation request{{ awaiting|pluralize }}
+            waiting for a time to be confirmed. The website promises a response
+            within one business day.
+        </div>
+        {% if status != "requested" %}
+            <a href="?status=requested" class="btn btn-sm btn-light-warning ms-auto">Show them</a>
+        {% endif %}
+    </div>
+{% endif %}
+
+<div class="card card-flush">
+    <div class="card-header pt-6 gap-3 flex-wrap">
+        <form method="get" class="card-title d-flex align-items-center gap-3 flex-wrap m-0">
+            <div class="d-flex align-items-center position-relative">
+                <i class="ki-outline ki-magnifier fs-3 position-absolute ms-4 text-gray-500"></i>
+                <input type="search" name="q" value="{{ query }}" class="form-control form-control-solid w-200px ps-12"
+                       placeholder="Name or reference" aria-label="Search consultations">
+            </div>
+
+            <select name="status" class="form-select form-select-solid w-150px" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="delivery" class="form-select form-select-solid w-150px" aria-label="Filter by location">
+                <option value="">Anywhere</option>
+                {% for value, label in deliveries %}
+                    <option value="{{ value }}" {% if delivery == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="assigned" class="form-select form-select-solid w-175px" aria-label="Filter by assigned user">
+                <option value="">Anyone</option>
+                <option value="me" {% if assigned == "me" %}selected{% endif %}>Assigned to me</option>
+                <option value="unassigned" {% if assigned == "unassigned" %}selected{% endif %}>Unassigned</option>
+                <optgroup label="Staff member">
+                    {% for person in assignees %}
+                        <option value="{{ person.pk }}" {% if assigned == person.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ person.get_full_name|default:person.username }}
+                        </option>
+                    {% endfor %}
+                </optgroup>
+            </select>
+
+            <button type="submit" class="btn btn-light-primary">Filter</button>
+            {% if query or status or delivery or assigned %}
+                <a href="{% url 'dashboard:consultation_list' %}" class="btn btn-light">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card-body pt-0">
+        <div class="table-responsive">
+            <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+                <thead>
+                    <tr class="fw-bold text-muted fs-7 text-uppercase">
+                        <th class="min-w-175px">Participant</th>
+                        <th class="min-w-150px d-none d-lg-table-cell">Wants</th>
+                        <th class="min-w-175px">When</th>
+                        <th class="min-w-125px">Status</th>
+                        <th class="text-end min-w-75px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in page_obj %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'dashboard:consultation_detail' booking.pk %}"
+                                   class="text-gray-800 fw-bold text-hover-primary fs-6 d-block">{{ booking.full_name }}</a>
+                                <span class="text-muted fw-semibold fs-7">{{ booking.reference }}</span>
+                                {% if booking.enquirer_type != "self" %}
+                                    <div class="text-muted fs-8">for {{ booking.for_whom }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-lg-table-cell">
+                                <span class="text-gray-700 fw-semibold fs-7 d-block">{{ booking.location_line }}</span>
+                                <span class="text-muted fs-8">{{ booking.get_plan_status_display }}</span>
+                            </td>
+                            <td>
+                                {% if booking.scheduled_for %}
+                                    <span class="text-gray-800 fw-bold fs-7 d-block">
+                                        {{ booking.scheduled_for|date:"D j M, g:i a" }}
+                                    </span>
+                                    <span class="text-muted fs-8">Confirmed</span>
+                                {% else %}
+                                    <span class="text-gray-700 fw-semibold fs-7 d-block">
+                                        {{ booking.preferred_date|date:"D j M" }}
+                                    </span>
+                                    <span class="text-muted fs-8">{{ booking.get_preferred_window_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-light-{{ booking.status_css }} fw-bold">
+                                    {{ booking.get_status_display }}
+                                </span>
+                                {% if booking.is_overdue %}
+                                    <div class="badge badge-light-danger fw-bold fs-8 mt-1">Overdue</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'dashboard:consultation_detail' booking.pk %}"
+                                   class="btn btn-icon btn-light btn-sm" title="Open">
+                                    <i class="ki-outline ki-eye fs-4"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-10">
+                                {% if query or status or delivery or assigned %}
+                                    No consultations match this search.
+                                {% else %}
+                                    No consultation requests yet. Bookings from the
+                                    website appear here.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "dashboard/partials/pagination.html" %}
+    </div>
+</div>
+{% endblock %}

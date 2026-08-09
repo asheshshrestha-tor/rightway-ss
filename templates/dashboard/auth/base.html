@@ -1,0 +1,65 @@
+{% load static %}<!DOCTYPE html>
+{% comment %}
+Split-screen shell for every signed-out screen (sign in, forgot password,
+set new password, confirmations), modelled on the Metronic demo29
+"corporate" authentication layout.
+{% endcomment %}
+<html lang="en-AU">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{% block title %}Sign In{% endblock %} | Rightway Support Services</title>
+
+    <link rel="shortcut icon" href="{{ site.favicon_url }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700">
+    <link href="{% static 'metronic/plugins/global/plugins.bundle.css' %}" rel="stylesheet">
+    <link href="{% static 'metronic/css/style.bundle.css' %}" rel="stylesheet">
+    <link href="{% static 'dashboard/css/dashboard.css' %}" rel="stylesheet">
+</head>
+
+<body id="kt_body" class="app-blank">
+    <script>
+        // Resolve the saved theme before first paint so there is no flash.
+        var themeMode = localStorage.getItem("data-bs-theme") || "light";
+        if (themeMode === "system") {
+            themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-bs-theme", themeMode);
+    </script>
+
+    <div class="d-flex flex-column flex-root" id="kt_app_root">
+        <div class="d-flex flex-column flex-lg-row flex-column-fluid">
+
+            <!--begin::Form side-->
+            <div class="d-flex flex-column flex-lg-row-fluid w-lg-50 p-10 order-2 order-lg-1">
+                <div class="d-flex flex-center flex-column flex-lg-row-fluid">
+                    <div class="w-100 w-md-400px">
+                        {% block form %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+            <!--end::Form side-->
+
+            <!--begin::Brand side-->
+            <div class="d-flex flex-lg-row-fluid w-lg-50 auth-bg order-1 order-lg-2">
+                <div class="d-flex flex-column flex-center py-15 px-5 px-md-15 w-100">
+                    <span class="brand-mark d-flex flex-center mb-8" style="width:72px;height:72px;font-size:1.6rem;border-radius:20px">RS</span>
+                    <h1 class="text-white fs-2qx fw-bolder text-center mb-6">Rightway Support Services</h1>
+                    <p class="text-white fs-base text-center opacity-75 mb-0" style="max-width: 30rem">
+                        {% block brand_text %}
+                            Manage enquiries from the public website, the people who can access
+                            this dashboard, and the roles that decide what each of them can do.
+                        {% endblock %}
+                    </p>
+                </div>
+            </div>
+            <!--end::Brand side-->
+        </div>
+    </div>
+
+    <script>var hostUrl = "{% static 'metronic/' %}";</script>
+    <script src="{% static 'metronic/plugins/global/plugins.bundle.js' %}"></script>
+    <script src="{% static 'metronic/js/scripts.bundle.js' %}"></script>
+</body>
+</html>

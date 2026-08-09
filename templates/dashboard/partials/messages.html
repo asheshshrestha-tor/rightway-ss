@@ -1,0 +1,20 @@
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == "error" %}
+            <div class="alert alert-danger d-flex align-items-center p-5 mb-6" role="alert">
+                <i class="ki-outline ki-shield-cross fs-2hx text-danger me-4"></i>
+                <div class="d-flex flex-column"><span>{{ message }}</span></div>
+            </div>
+        {% elif message.tags == "warning" %}
+            <div class="alert alert-warning d-flex align-items-center p-5 mb-6" role="alert">
+                <i class="ki-outline ki-information-5 fs-2hx text-warning me-4"></i>
+                <div class="d-flex flex-column"><span>{{ message }}</span></div>
+            </div>
+        {% else %}
+            <div class="alert alert-success d-flex align-items-center p-5 mb-6" role="status">
+                <i class="ki-outline ki-shield-tick fs-2hx text-success me-4"></i>
+                <div class="d-flex flex-column"><span>{{ message }}</span></div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}

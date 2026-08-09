@@ -1,0 +1,162 @@
+{% extends "dashboard/base.html" %}
+
+{% block toolbar_actions %}
+    <a href="tel:{{ consultation.phone }}" class="btn btn-sm btn-primary">
+        <i class="ki-outline ki-phone fs-4 me-1"></i>Call {{ consultation.phone }}
+    </a>
+    <a href="mailto:{{ consultation.email }}?subject=Your%20consultation%20({{ consultation.reference }})"
+       class="btn btn-sm btn-light">
+        <i class="ki-outline ki-sms fs-4 me-1"></i>Email
+    </a>
+{% endblock %}
+
+{% block content %}
+{% if consultation.is_overdue %}
+    <div class="alert alert-danger d-flex align-items-center p-5 mb-6" role="alert">
+        <i class="ki-outline ki-information-5 fs-2hx text-danger me-4"></i>
+        <div class="fs-7">
+            This request arrived {{ consultation.created_at|timesince }} ago and is
+            still unanswered. The website promises a response within one business day.
+        </div>
+    </div>
+{% endif %}
+
+<div class="row g-5 g-xl-8">
+    <div class="col-xl-8">
+        <div class="card card-flush">
+            <div class="card-header pt-6">
+                <div class="card-title flex-column">
+                    <h3 class="fw-bold mb-1">{{ consultation.full_name }}</h3>
+                    <span class="text-muted fs-7">
+                        {{ consultation.reference }} &middot; requested
+                        {{ consultation.created_at|date:"l j F Y, g:i a" }}
+                    </span>
+                </div>
+                <div class="card-toolbar">
+                    <span class="badge badge-light-{{ consultation.status_css }} fs-7 fw-bold">
+                        {{ consultation.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body pt-4">
+                <div class="row mb-8">
+                    <div class="col-sm-4 mb-5 mb-sm-0">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Phone</div>
+                        <a href="tel:{{ consultation.phone }}" class="fw-bold fs-6">{{ consultation.phone }}</a>
+                    </div>
+                    <div class="col-sm-4 mb-5 mb-sm-0">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Email</div>
+                        <a href="mailto:{{ consultation.email }}" class="fw-bold fs-6">{{ consultation.email }}</a>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Consultation for</div>
+                        <span class="fw-bold fs-6">{{ consultation.for_whom }}</span>
+                        <div class="text-muted fs-8">{{ consultation.get_enquirer_type_display }}</div>
+                    </div>
+                </div>
+
+                <div class="separator my-6"></div>
+
+                <div class="row mb-8">
+                    <div class="col-sm-4 mb-5 mb-sm-0">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">NDIS plan</div>
+                        <span class="fw-bold fs-6">{{ consultation.get_plan_status_display }}</span>
+                    </div>
+                    <div class="col-sm-4 mb-5 mb-sm-0">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Where</div>
+                        <span class="fw-bold fs-6">{{ consultation.location_line }}</span>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">They asked for</div>
+                        <span class="fw-bold fs-6">{{ consultation.preference_line }}</span>
+                    </div>
+                </div>
+
+                <div class="text-muted fw-semibold fs-8 text-uppercase mb-2">Interested in</div>
+                <div class="mb-8">
+                    {% for service in consultation.services.all %}
+                        <span class="badge badge-light-info fw-semibold me-1 mb-1">{{ service.title }}</span>
+                    {% empty %}
+                        <span class="text-muted fs-7">Not specified</span>
+                    {% endfor %}
+                </div>
+
+                <div class="text-muted fw-semibold fs-8 text-uppercase mb-2">What they want to talk about</div>
+                {% if consultation.goals %}
+                    <div class="bg-light rounded p-6 fs-6 text-gray-800" style="white-space: pre-wrap">{{ consultation.goals }}</div>
+                {% else %}
+                    <p class="text-muted fs-7 mb-0">Nothing added.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card card-flush">
+            <div class="card-header pt-6">
+                <div class="card-title flex-column">
+                    <h3 class="fw-bold mb-1">Confirm a time</h3>
+                    {% if consultation.confirmation_sent_at %}
+                        <span class="text-muted fs-7">
+                            Confirmation emailed {{ consultation.confirmation_sent_at|date:"j M, g:i a" }}
+                        </span>
+                    {% else %}
+                        <span class="text-muted fs-7">The participant has not been told a time yet</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body pt-4">
+                {% if can_edit %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger p-4 mb-5" role="alert">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% include "dashboard/partials/field.html" with field=form.scheduled_for %}
+                        {% include "dashboard/partials/field.html" with field=form.status %}
+                        {% include "dashboard/partials/field.html" with field=form.assigned_to %}
+
+                        <div class="form-check form-check-custom form-check-solid mb-6">
+                            {{ form.send_confirmation }}
+                            <label class="form-check-label fw-semibold text-gray-700" for="{{ form.send_confirmation.id_for_label }}">
+                                {{ form.send_confirmation.label }}
+                            </label>
+                        </div>
+
+                        {% include "dashboard/partials/field.html" with field=form.staff_notes %}
+
+                        <button type="submit" class="btn btn-primary w-100">Save</button>
+                    </form>
+                {% else %}
+                    <div class="mb-5">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Confirmed for</div>
+                        <span class="fw-bold fs-6">
+                            {{ consultation.scheduled_for|date:"l j F, g:i a"|default:"Not yet confirmed" }}
+                        </span>
+                    </div>
+                    <div class="mb-5">
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Assigned to</div>
+                        <span class="fw-bold fs-6">{{ consultation.assigned_to.username|default:"Unassigned" }}</span>
+                    </div>
+                    <div>
+                        <div class="text-muted fw-semibold fs-8 text-uppercase mb-1">Notes</div>
+                        <p class="fs-7 text-gray-700 mb-0">{{ consultation.staff_notes|default:"No notes."|linebreaksbr }}</p>
+                    </div>
+                    <div class="notice bg-light-warning rounded border-warning border border-dashed p-4 mt-6">
+                        <span class="fs-8 text-gray-700">You have read-only access to consultations.</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <a href="{% url 'dashboard:consultation_list' %}" class="btn btn-light w-100">
+                <i class="ki-outline ki-arrow-left fs-4 me-1"></i>Back to consultations
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

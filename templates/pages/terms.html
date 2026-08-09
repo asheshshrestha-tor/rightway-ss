@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Terms &amp; Conditions | {{ site.name }}{% endblock %}
+{% block meta_description %}The terms that apply to this website and to support delivered by Rightway Support Services, including service agreements, fees, cancellations and complaints.{% endblock %}
+{% block body_class %}terms{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="shell policy-layout">
+        <div>
+            {% include "partials/breadcrumbs.html" with current="Terms & Conditions" %}
+            <div class="title-stack">
+                <h1>Terms &amp; Conditions <span>Clear and Fair</span></h1>
+            </div>
+            <p class="lead">These terms explain how you may use this website and how support is delivered under a service agreement with us.</p>
+
+            <div class="policy-body">
+                {% for section in terms_sections %}
+                    <h2>{{ section.title }}</h2>
+                    <p>{{ section.body }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="policy-media">
+            <img src="{% static 'images/hero-privacy.svg' %}" alt="A support worker and participant reviewing support arrangements together">
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Questions About These Terms?" cta_text="We're happy to talk them through with you." cta_label="Contact Us" cta_url="/contact/" cta_icon="shield-check" %}
+{% endblock %}

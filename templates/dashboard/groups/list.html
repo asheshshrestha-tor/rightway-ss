@@ -1,0 +1,79 @@
+{% extends "dashboard/base.html" %}
+
+{% block toolbar_actions %}
+    {% if perms.auth.add_group %}
+        <a href="{% url 'dashboard:group_create' %}" class="btn btn-sm btn-primary">
+            <i class="ki-outline ki-plus fs-4 me-1"></i>Add Role
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="notice bg-light-primary rounded border-primary border border-dashed p-6 mb-8 d-flex align-items-center">
+    <i class="ki-outline ki-information-5 fs-2tx text-primary me-4"></i>
+    <div class="fs-7 text-gray-700">
+        A role is a named set of permissions. Assign roles to users on the user
+        edit screen &mdash; a user gets the combined permissions of every role
+        they hold. Full administrators bypass roles entirely.
+    </div>
+</div>
+
+<div class="row g-5 g-xl-8">
+    {% for group in page_obj %}
+        <div class="col-md-6 col-xl-4">
+            <div class="card card-flush h-100">
+                <div class="card-header pt-6">
+                    <div class="card-title d-flex align-items-center">
+                        <span class="symbol symbol-45px me-4">
+                            <span class="symbol-label bg-light-info">
+                                <i class="ki-outline ki-security-user fs-2x text-info"></i>
+                            </span>
+                        </span>
+                        <h3 class="fw-bold m-0">{{ group.name }}</h3>
+                    </div>
+                </div>
+                <div class="card-body pt-4 d-flex flex-column justify-content-between">
+                    <div class="d-flex gap-6 mb-6">
+                        <div>
+                            <span class="fs-2hx fw-bold text-gray-900 d-block lh-1">{{ group.member_count }}</span>
+                            <span class="text-muted fw-semibold fs-7">User{{ group.member_count|pluralize }}</span>
+                        </div>
+                        <div>
+                            <span class="fs-2hx fw-bold text-gray-900 d-block lh-1">{{ group.permission_count }}</span>
+                            <span class="text-muted fw-semibold fs-7">Permission{{ group.permission_count|pluralize }}</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        {% if perms.auth.change_group %}
+                            <a href="{% url 'dashboard:group_update' group.pk %}" class="btn btn-sm btn-light-primary flex-grow-1">Edit role</a>
+                        {% endif %}
+                        {% if perms.auth.delete_group %}
+                            <a href="{% url 'dashboard:group_delete' group.pk %}" class="btn btn-sm btn-icon btn-light-danger" title="Delete">
+                                <i class="ki-outline ki-trash fs-5"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="card card-flush">
+                <div class="card-body text-center py-15">
+                    <i class="ki-outline ki-security-user fs-3tx text-gray-400 mb-4 d-block"></i>
+                    <h3 class="fw-bold text-gray-800 mb-2">No roles yet</h3>
+                    <p class="text-muted fs-6 mb-6">
+                        Create a role to grant a group of users the same set of permissions.
+                    </p>
+                    {% if perms.auth.add_group %}
+                        <a href="{% url 'dashboard:group_create' %}" class="btn btn-primary">Add your first role</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% include "dashboard/partials/pagination.html" %}
+{% endblock %}

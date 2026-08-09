@@ -1,0 +1,236 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block toolbar_actions %}
+    <a href="{% url 'home' %}" target="_blank" rel="noopener" class="btn btn-sm btn-light">
+        <i class="ki-outline ki-eye fs-4 me-1"></i>Preview site
+    </a>
+{% endblock %}
+
+{% block content %}
+{% comment %}
+enctype is required - without it the browser posts field names only and the
+logo and favicon uploads are silently dropped.
+{% endcomment %}
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger p-5 mb-6" role="alert">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="notice bg-light-primary rounded border-primary border border-dashed p-6 mb-8 d-flex align-items-center">
+        <i class="ki-outline ki-information-5 fs-2tx text-primary me-4"></i>
+        <div class="fs-7 text-gray-700">
+            These details appear across the whole website &mdash; in the header,
+            the footer, the contact page and the map. The email address here is
+            also where enquiries, applications and consultation requests are sent.
+        </div>
+    </div>
+
+    <div class="row g-5 g-xl-8">
+        <div class="col-xl-8">
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Contact details</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    <div class="row">
+                        <div class="col-md-6">{% include "dashboard/partials/field.html" with field=form.phone %}</div>
+                        <div class="col-md-6">{% include "dashboard/partials/field.html" with field=form.email %}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">{% include "dashboard/partials/field.html" with field=form.address %}</div>
+                        <div class="col-md-6">{% include "dashboard/partials/field.html" with field=form.hours %}</div>
+                    </div>
+                    {% include "dashboard/partials/field.html" with field=form.abn %}
+
+                    {% if object.phone %}
+                        <div class="notice bg-light rounded p-4">
+                            <span class="fs-8 text-gray-700">
+                                The phone link is built from the number above:
+                                <code>{{ object.phone_href }}</code>
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title flex-column">
+                        <h3 class="fw-bold mb-1">Map</h3>
+                        <span class="text-muted fs-7">Shown at the bottom of the contact page</span>
+                    </div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.map_address %}
+                    {% include "dashboard/partials/field.html" with field=form.map_embed_url %}
+
+                    <div class="map-preview rounded overflow-hidden border">
+                        <iframe src="{{ object.map_url }}" title="Current map location"
+                                loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                    <div class="form-text">Save to refresh this preview.</div>
+                </div>
+            </div>
+
+            <div class="card card-flush">
+                <div class="card-header pt-6">
+                    <div class="card-title flex-column">
+                        <h3 class="fw-bold mb-1">Follow us</h3>
+                        <span class="text-muted fs-7">Shown in the footer. Untick a row to hide it; a ticked row shows its icon even without a link yet.</span>
+                    </div>
+                </div>
+                <div class="card-body pt-4">
+                    {{ formset.management_form }}
+
+                    {% if formset.non_form_errors %}
+                        <div class="alert alert-danger p-4 mb-5" role="alert">{{ formset.non_form_errors }}</div>
+                    {% endif %}
+
+                    <div class="table-responsive">
+                        <table class="table align-middle gy-3 mb-0">
+                            <thead>
+                                <tr class="fw-bold text-muted fs-8 text-uppercase">
+                                    <th class="w-175px">Platform</th>
+                                    <th>Link</th>
+                                    <th class="w-90px">Order</th>
+                                    <th class="w-90px text-center">Show</th>
+                                    <th class="w-90px text-center">Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for social in formset %}
+                                    <tr>
+                                        {{ social.id }}
+                                        <td>
+                                            {{ social.platform }}
+                                            {% if social.platform.errors %}
+                                                <ul class="field-errors">{% for e in social.platform.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ social.url }}
+                                            {% if social.url.errors %}
+                                                <ul class="field-errors">{% for e in social.url.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ social.order }}</td>
+                                        <td class="text-center">
+                                            <div class="form-check form-check-custom form-check-solid d-inline-flex">
+                                                {{ social.is_published }}
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="form-check form-check-custom form-check-solid d-inline-flex">
+                                                {{ social.DELETE }}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-text">
+                        The blank row at the bottom adds a new link. Save, and another appears.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Identity</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.name %}
+                    {% include "dashboard/partials/field.html" with field=form.tagline %}
+                </div>
+            </div>
+
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Logo</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    <div class="brand-preview brand-preview--light mb-3">
+                        <img id="logo-preview" src="{{ object.logo_url }}" alt="">
+                    </div>
+                    {% include "dashboard/partials/field.html" with field=form.logo %}
+
+                    <div class="separator my-5"></div>
+
+                    <div class="brand-preview brand-preview--dark mb-3">
+                        <img id="logo-light-preview" src="{{ object.logo_light_url }}" alt="">
+                    </div>
+                    {% include "dashboard/partials/field.html" with field=form.logo_light %}
+                </div>
+            </div>
+
+            <div class="card card-flush mb-5 mb-xl-8">
+                <div class="card-header pt-6">
+                    <div class="card-title flex-column">
+                        <h3 class="fw-bold mb-1">Favicon</h3>
+                        <span class="text-muted fs-7">Browser tab icon, website and dashboard</span>
+                    </div>
+                </div>
+                <div class="card-body pt-4">
+                    <div class="d-flex align-items-center gap-4 mb-3">
+                        <img id="favicon-preview" src="{{ object.favicon_url }}" alt=""
+                             class="rounded" style="width:48px;height:48px;object-fit:cover">
+                        <img src="{{ object.favicon_url }}" alt=""
+                             class="rounded" style="width:16px;height:16px;object-fit:cover">
+                        <span class="text-muted fs-8">48px and 16px</span>
+                    </div>
+                    {% include "dashboard/partials/field.html" with field=form.favicon %}
+                </div>
+            </div>
+
+            <div class="card card-flush">
+                <div class="card-header pt-6">
+                    <div class="card-title"><h3 class="fw-bold m-0">Footer text</h3></div>
+                </div>
+                <div class="card-body pt-4">
+                    {% include "dashboard/partials/field.html" with field=form.footer_description %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-3 py-8">
+        <a href="{% url 'dashboard:index' %}" class="btn btn-light">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save settings</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Preview each image before saving.
+    (function () {
+        var pairs = [
+            ["{{ form.logo.auto_id }}", "logo-preview"],
+            ["{{ form.logo_light.auto_id }}", "logo-light-preview"],
+            ["{{ form.favicon.auto_id }}", "favicon-preview"],
+        ];
+
+        pairs.forEach(function (pair) {
+            var input = document.getElementById(pair[0]);
+            var preview = document.getElementById(pair[1]);
+            if (!input || !preview) return;
+
+            input.addEventListener("change", function () {
+                var file = this.files && this.files[0];
+                if (!file) return;
+                var url = URL.createObjectURL(file);
+                preview.src = url;
+                preview.addEventListener("load", function () {
+                    URL.revokeObjectURL(url);
+                }, { once: true });
+            });
+        });
+    })();
+</script>
+{% endblock %}

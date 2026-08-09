@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Careers | {{ site.name }}{% endblock %}
+{% block meta_description %}Join our passionate team and help make a real difference in the lives of people with disability. View current support worker and coordinator vacancies in Toowoomba, QLD.{% endblock %}
+{% block body_class %}careers{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="shell hero-inner">
+        <div class="hero-copy title-stack">
+            {% include "partials/breadcrumbs.html" with current="Careers" %}
+            <h1>Careers <span>Make a Difference<br>Every Day</span></h1>
+            <p class="lead">Join our passionate team and help make a real difference in the lives of people with disability.</p>
+            <div class="hero-actions">
+                <a class="btn btn--primary" href="#current-vacancies">
+                    View Current Vacancies
+                    <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-media hero-media--wide">
+            <img src="{% static 'images/hero-careers.png' %}" alt="Four Rightway Support Services team members in branded uniforms">
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="shell">
+        <div class="section-head section-head--center">
+            <h2>Why Work With Us</h2>
+        </div>
+        <div class="step-grid">
+            {% for benefit in career_benefits %}
+                <div class="step">
+                    <span class="step__icon">
+                        <svg aria-hidden="true"><use href="#i-{{ benefit.icon }}"></use></svg>
+                    </span>
+                    <h3>{{ benefit.title }}</h3>
+                    <p>{{ benefit.text }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section section--tight" id="current-vacancies">
+    <div class="shell card-grid card-grid--60-40">
+        <div>
+            <h2>Current Vacancies</h2>
+            <ul class="vacancy-list">
+                {% for vacancy in vacancies %}
+                    <li class="vacancy">
+                        <div>
+                            <h3><a href="{{ vacancy.get_absolute_url }}">{{ vacancy.title }}</a></h3>
+                            <p>{{ vacancy.detail_line }}</p>
+                            {% if vacancy.closing_date %}
+                                <p class="vacancy__closing">Applications close {{ vacancy.closing_date|date:"j M Y" }}</p>
+                            {% endif %}
+                        </div>
+                        <a class="btn btn--primary btn--sm" href="{{ vacancy.get_absolute_url }}">View &amp; Apply</a>
+                    </li>
+                {% empty %}
+                    <li class="vacancy">
+                        <div>
+                            <h3>No open vacancies right now</h3>
+                            <p>We'd still like to hear from you &mdash; send us your resume.</p>
+                        </div>
+                        <a class="btn btn--primary btn--sm" href="{% url 'apply' %}">Send Resume</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="panel panel-with-art">
+            <div>
+                <h2>Don't See the Right Role?</h2>
+                <p>We are always looking for passionate people to join our team. Send us your resume and we'll be in touch.</p>
+                <p class="mt-lg">
+                    <a class="btn btn--primary" href="{% url 'apply' %}">
+                        Send Your Resume
+                        <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+                    </a>
+                </p>
+            </div>
+            <span class="panel__art">
+                <svg width="100" height="100" aria-hidden="true"><use href="#i-sprout"></use></svg>
+            </span>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block cta %}
+    {% include "partials/cta_band.html" with cta_title="Join Our Team" cta_text="Help us empower individuals to live their best life." cta_label="View Current Vacancies" cta_url="#current-vacancies" cta_icon="community" %}
+{% endblock %}
