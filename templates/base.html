@@ -1,11 +1,33 @@
-{% load static %}<!DOCTYPE html>
+{% load static seo %}<!DOCTYPE html>
 <html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#166534">
     <title>{% block title %}{{ site.name }}{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Rightway Support Services is a registered NDIS provider in Toowoomba, QLD, delivering person-centred disability support that helps you live independently and achieve your goals.{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Registered NDIS provider in Toowoomba, QLD. Person-centred disability support that helps you live independently and achieve your goals.{% endblock %}">
+
+    {% comment %}
+    Tells search engines which address is the real one for this page, so that
+    the same content reached with a tracking parameter, or with and without a
+    trailing slash, is not counted as several competing pages.
+    {% endcomment %}
+    <link rel="canonical" href="{% block canonical %}{{ canonical_url }}{% endblock %}">
+
+    {% comment %}
+    Open Graph and Twitter tags control the preview when a page is shared in
+    Facebook, LinkedIn, WhatsApp or a text message - which for a service like
+    this is often how a family first sees it. Without them the platform picks
+    an arbitrary image and truncates whatever text it finds.
+    {% endcomment %}
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="{{ site.name }}">
+    <meta property="og:locale" content="en_AU">
+    <meta property="og:title" content="{% block og_title %}{{ site.name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Registered NDIS provider in Toowoomba, QLD. Person-centred disability support that helps you live independently and achieve your goals.{% endblock %}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/hero-home.png' %}{% endblock %}">
+    <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" href="{{ site.favicon_url }}">
     <link rel="apple-touch-icon" href="{{ site.apple_icon_url }}">
@@ -15,6 +37,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% comment %}
+    Schema.org data. The business block appears on every page; `page_schema`
+    and `breadcrumb_schema` are supplied by whichever view has the detail -
+    a service, a job advert, a team member, the FAQ list.
+    {% endcomment %}
+    {% ld_json organization_schema %}
+    {% ld_json page_schema %}
+    {% ld_json breadcrumb_schema %}
+
     {% block extra_head %}{% endblock %}
 </head>
 <body class="page-{% block body_class %}default{% endblock %}">

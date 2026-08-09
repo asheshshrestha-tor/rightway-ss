@@ -8,8 +8,9 @@ from django.urls import reverse
 
 from . import content
 from . import consultation_mail
+from . import structured_data
 from .forms import ApplicationForm, ConsultationForm, ContactForm
-from .models import Consultation, Enquiry, Service, TeamMember, Vacancy
+from .models import Consultation, Enquiry, Service, SiteSettings, TeamMember, Vacancy
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,15 @@ def team_member(request, slug):
         {
             "member": member,
             "colleagues": TeamMember.objects.published().exclude(pk=member.pk)[:4],
+            "page_schema": structured_data.person(request, member, SiteSettings.load()),
+            "breadcrumb_schema": structured_data.breadcrumbs(
+                request,
+                [
+                    ("Home", reverse("home")),
+                    ("About Us", reverse("about")),
+                    (member.name, None),
+                ],
+            ),
         },
     )
 
@@ -65,6 +75,17 @@ def service_detail(request, slug):
         {
             "service": service,
             "related": Service.objects.published().exclude(pk=service.pk)[:3],
+            "page_schema": structured_data.service(
+                request, service, SiteSettings.load()
+            ),
+            "breadcrumb_schema": structured_data.breadcrumbs(
+                request,
+                [
+                    ("Home", reverse("home")),
+                    ("Services", reverse("services")),
+                    (service.title, None),
+                ],
+            ),
         },
     )
 
@@ -102,7 +123,20 @@ def vacancy_detail(request, slug):
         request,
         vacancy=vacancy,
         template="pages/vacancy_detail.html",
-        extra={"other_vacancies": Vacancy.objects.open_now().exclude(pk=vacancy.pk)[:3]},
+        extra={
+            "other_vacancies": Vacancy.objects.open_now().exclude(pk=vacancy.pk)[:3],
+            "page_schema": structured_data.job_posting(
+                request, vacancy, SiteSettings.load()
+            ),
+            "breadcrumb_schema": structured_data.breadcrumbs(
+                request,
+                [
+                    ("Home", reverse("home")),
+                    ("Careers", reverse("careers")),
+                    (vacancy.title, None),
+                ],
+            ),
+        },
     )
 
 
@@ -252,7 +286,14 @@ def consultation_booked(request):
 
 
 def faq(request):
-    return render(request, "pages/faq.html", {"faqs": content.FAQS})
+    return render(
+        request,
+        "pages/faq.html",
+        {
+            "faqs": content.FAQS,
+            "page_schema": structured_data.faq_page(content.FAQS),
+        },
+    )
 
 
 def privacy_policy(request):

@@ -527,6 +527,21 @@ through `{{ ...|json_script }}` rather than inline interpolation.
 **Licensing:** Metronic is commercial software from KeenThemes. Using it in a
 delivered project needs a valid license purchased from ThemeForest.
 
+## SEO
+
+Every public page carries a title, meta description, canonical URL and Open
+Graph tags. `/sitemap.xml` and `/robots.txt` are generated, and schema.org data
+is attached automatically: `LocalBusiness` sitewide, plus `Service`,
+`JobPosting`, `Person`, `FAQPage` and breadcrumbs on the pages that have the
+detail. Adding a service or vacancy in the dashboard needs no extra step.
+
+`JobPosting` is the one with direct commercial value — it can put vacancies in
+Google's jobs experience without paying a job board.
+
+See [Docs/seo.md](Docs/seo.md), including the list of things that still need a
+person: Search Console verification, a Google Business Profile, and a 1200×630
+share image.
+
 ## Deployment
 
 The project ships a `Dockerfile` and serves its own static files through

@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Generates /sitemap.xml from pages/sitemaps.py.
+    "django.contrib.sitemaps",
     "pages",
     "dashboard",
 ]

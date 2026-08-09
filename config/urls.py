@@ -1,14 +1,25 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path, re_path
 from django.views.static import serve
+
+from pages.seo_views import robots_txt
+from pages.sitemaps import SITEMAPS
 
 urlpatterns = [
     # The staff dashboard is the primary back office. Django's own admin is
     # kept mounted as a fallback; drop the line below to remove it entirely.
     path("dashboard/", include("dashboard.urls")),
     path("admin/", admin.site.urls),
+    path(
+        "sitemap.xml",
+        sitemap,
+        {"sitemaps": SITEMAPS},
+        name="django.contrib.sitemaps.views.sitemap",
+    ),
+    path("robots.txt", robots_txt, name="robots_txt"),
     path("", include("pages.urls")),
 ]
 

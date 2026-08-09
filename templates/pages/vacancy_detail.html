@@ -3,6 +3,8 @@
 
 {% block title %}{{ vacancy.title }} | Careers | {{ site.name }}{% endblock %}
 {% block meta_description %}{{ vacancy.summary }}{% endblock %}
+{% block og_title %}{{ vacancy.title }} | Careers | {{ site.name }}{% endblock %}
+{% block og_description %}{{ vacancy.summary }}{% endblock %}
 {% block body_class %}vacancy-detail{% endblock %}
 
 {% block content %}
