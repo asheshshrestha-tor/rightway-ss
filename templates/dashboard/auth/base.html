@@ -44,8 +44,10 @@ set new password, confirmations), modelled on the Metronic demo29
             <!--begin::Brand side-->
             <div class="d-flex flex-lg-row-fluid w-lg-50 auth-bg order-1 order-lg-2">
                 <div class="d-flex flex-column flex-center py-15 px-5 px-md-15 w-100">
-                    <span class="brand-mark d-flex flex-center mb-8" style="width:72px;height:72px;font-size:1.6rem;border-radius:20px">RS</span>
-                    <h1 class="text-white fs-2qx fw-bolder text-center mb-6">Rightway Support Services</h1>
+                    <span class="d-flex flex-center mb-8">
+                        {% include "dashboard/partials/brand.html" with height=64 on_dark=True %}
+                    </span>
+                    <h1 class="text-white fs-2qx fw-bolder text-center mb-6">{{ site.name }}</h1>
                     <p class="text-white fs-base text-center opacity-75 mb-0" style="max-width: 30rem">
                         {% block brand_text %}
                             Manage enquiries from the public website, the people who can access

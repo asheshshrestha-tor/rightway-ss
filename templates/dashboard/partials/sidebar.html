@@ -16,8 +16,8 @@ the active section from request.path.
     <!--begin::Sidebar primary (icon rail)-->
     <div class="app-sidebar-primary">
         <div class="app-sidebar-logo d-none d-md-flex flex-center pt-8 mb-5 mb-lg-10" id="kt_app_sidebar_logo">
-            <a href="{% url 'dashboard:index' %}" title="Rightway Support Services">
-                <span class="brand-mark d-flex flex-center">RS</span>
+            <a href="{% url 'dashboard:index' %}" class="d-flex flex-center" title="{{ site.name }}">
+                {% include "dashboard/partials/brand.html" with height=42 %}
             </a>
         </div>
 

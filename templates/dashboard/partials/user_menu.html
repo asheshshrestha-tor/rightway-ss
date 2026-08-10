@@ -7,9 +7,7 @@
     <div class="cursor-pointer symbol symbol-40px symbol-circle"
          data-kt-menu-trigger="{default: 'click', lg: 'hover'}"
          data-kt-attach="parent" data-kt-menu-placement="bottom-end">
-        <span class="symbol-label bg-light-primary text-primary fw-bold fs-6">
-            {{ request.user.get_username|slice:":2"|upper }}
-        </span>
+        {% include "dashboard/partials/avatar.html" with user=request.user px=80 label_class="fs-6" %}
     </div>
 
     <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-color fw-semibold py-4 fs-6 w-275px"
@@ -18,9 +16,7 @@
         <div class="menu-item px-3">
             <div class="menu-content d-flex align-items-center px-3">
                 <div class="symbol symbol-50px me-4 flex-shrink-0">
-                    <span class="symbol-label bg-light-primary text-primary fw-bold fs-4">
-                        {{ request.user.get_username|slice:":2"|upper }}
-                    </span>
+                    {% include "dashboard/partials/avatar.html" with user=request.user px=100 label_class="fs-4" %}
                 </div>
                 {% comment %}
                 min-width:0 (via .user-identity) is what lets the long email

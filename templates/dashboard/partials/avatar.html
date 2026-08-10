@@ -1,0 +1,15 @@
+{% load avatars %}
+{% comment %}
+Profile thumbnail. Include with:
+    {% include "dashboard/partials/avatar.html" with user=request.user px=80 %}
+
+The initials are rendered first and the remote image sits on top of them, so if
+ui-avatars.com is unreachable - offline, blocked, or simply down - `onerror`
+drops the image and the initials show through. The alternative is a broken
+image icon where someone's face should be.
+{% endcomment %}
+<span class="symbol-label avatar-stack bg-light-primary text-primary fw-bold {{ label_class|default:'fs-6' }}">
+    {% avatar_initials user %}
+    <img src="{% avatar_url user px|default:80 %}" alt=""
+         class="avatar-stack__img" loading="lazy" onerror="this.remove()">
+</span>

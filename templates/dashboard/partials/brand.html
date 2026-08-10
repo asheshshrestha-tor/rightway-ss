@@ -1,0 +1,21 @@
+{% comment %}
+The logo uploaded on the Settings page. Include with:
+    {% include "dashboard/partials/brand.html" with height=44 %}
+
+Two images, not one. The colour logo disappears against the dark theme and the
+white one against the light theme, so Metronic's theme-light-show and
+theme-dark-show pick whichever suits - the same mechanism the appearance
+switcher already uses for its icons.
+
+Pass on_dark=True for a surface that is dark in both themes, such as the mobile
+header bar, where only the white logo is ever right.
+{% endcomment %}
+{% if on_dark %}
+    <img src="{{ site.logo_light_url }}" alt="{{ site.name }}"
+         class="dashboard-logo" style="height:{{ height|default:40 }}px">
+{% else %}
+    <img src="{{ site.logo_url }}" alt="{{ site.name }}"
+         class="dashboard-logo theme-light-show" style="height:{{ height|default:40 }}px">
+    <img src="{{ site.logo_light_url }}" alt="{{ site.name }}"
+         class="dashboard-logo theme-dark-show" style="height:{{ height|default:40 }}px">
+{% endif %}

@@ -2,22 +2,30 @@
    Kept small on purpose - anything that can be done with Metronic utility
    classes should be, so theme upgrades stay painless. */
 
-.brand-mark {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #7cb342 0%, #166534 100%);
-    color: #fff;
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 0.02em;
+/* The logo from the Settings page, wherever the dashboard shows it.
+   Height is set per location; width follows the image so a wide logo is never
+   squashed into a square. max-width keeps it inside the 80px sidebar rail. */
+.dashboard-logo {
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
 }
 
-.brand-mark--sm {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
-    font-size: 0.82rem;
+/* Profile thumbnail. The initials are painted by the parent .symbol-label and
+   the remote image is laid over them, so if ui-avatars.com cannot be reached
+   the image removes itself and the initials are already in place underneath. */
+.avatar-stack {
+    position: relative;
+    overflow: hidden;
+}
+
+.avatar-stack__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
 }
 
 /* Name + email block in the avatar dropdown.

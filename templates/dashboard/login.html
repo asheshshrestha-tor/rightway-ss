@@ -7,9 +7,11 @@
     {% csrf_token %}
 
     <div class="text-center mb-11">
-        <span class="brand-mark d-inline-flex flex-center mb-6">RS</span>
+        <span class="d-inline-flex flex-center mb-6">
+            {% include "dashboard/partials/brand.html" with height=52 %}
+        </span>
         <h1 class="text-gray-900 fw-bolder mb-3">Sign In</h1>
-        <div class="text-gray-500 fw-semibold fs-6">Rightway Support Services dashboard</div>
+        <div class="text-gray-500 fw-semibold fs-6">{{ site.name }} dashboard</div>
     </div>
 
     {% if form.non_field_errors %}
