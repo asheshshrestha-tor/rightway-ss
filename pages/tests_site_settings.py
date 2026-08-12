@@ -132,6 +132,68 @@ class PublicSiteTests(TestCase):
         self.assertContains(response, static("images/favicon-32.png"))
 
 
+class TopBarTests(TestCase):
+    """The utility bar above the nav - see templates/partials/topbar.html."""
+
+    def test_it_carries_the_contact_details_on_every_page(self):
+        settings_row = SiteSettings.load()
+        settings_row.phone = "0400 111 222"
+        settings_row.email = "hello@example.com"
+        settings_row.address = "Highfields, QLD 4352"
+        settings_row.hours = "Mon - Sat, 9:00 AM - 4:00 PM"
+        settings_row.save()
+
+        for page in ("home", "about", "careers"):
+            with self.subTest(page=page):
+                response = self.client.get(reverse(page))
+                self.assertContains(response, '<div class="topbar">')
+                self.assertContains(response, "tel:+61400111222")
+                self.assertContains(response, "mailto:hello@example.com")
+                self.assertContains(response, "Highfields, QLD 4352")
+                self.assertContains(response, "Mon - Sat, 9:00 AM - 4:00 PM")
+
+    def test_it_sits_inside_the_sticky_header(self):
+        """Both rows have to move as one, or only the nav would stay put."""
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertLess(
+            html.index('<header class="site-header">'), html.index('<div class="topbar">')
+        )
+        self.assertLess(
+            html.index('<div class="topbar">'), html.index('<div class="shell header-inner">')
+        )
+
+    def test_an_unset_detail_leaves_no_empty_row_behind(self):
+        settings_row = SiteSettings.load()
+        settings_row.address = ""
+        settings_row.hours = ""
+        settings_row.save()
+
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, '<div class="topbar">')
+        self.assertNotContains(response, 'class="topbar__address"')
+        self.assertNotContains(response, 'class="topbar__hours"')
+
+    def test_the_whole_bar_goes_when_there_is_nothing_to_put_in_it(self):
+        settings_row = SiteSettings.load()
+        settings_row.phone = ""
+        settings_row.email = ""
+        settings_row.address = ""
+        settings_row.hours = ""
+        settings_row.save()
+
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, '<div class="topbar">')
+
+    def test_published_social_links_appear_alongside_the_hours(self):
+        SocialLink.objects.filter(platform="facebook").update(
+            is_published=True, url="https://facebook.com/rightway"
+        )
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, 'class="topbar__social"')
+        self.assertContains(response, "https://facebook.com/rightway")
+
+
 class SocialLinkTests(TestCase):
     def test_seeded_placeholders_are_unpublished(self):
         """Seeded off, so the footer starts clean until someone opts in."""

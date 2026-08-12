@@ -1,5 +1,7 @@
 {% load static %}
 <header class="site-header">
+    {% include "partials/topbar.html" %}
+
     <div class="shell header-inner">
         <a class="brand" href="{% url 'home' %}">
             <img src="{{ site.logo_url }}" alt="{{ site.name }}{% if site.tagline %} - {{ site.tagline }}{% endif %}" width="220" height="77">

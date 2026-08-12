@@ -1,0 +1,70 @@
+{% comment %}
+Utility bar above the main nav: the details a family looks for before they read
+anything else - how to call, where we are, when we are open.
+
+It lives inside `.site-header` rather than above it so that the whole block is
+one sticky unit. `main.js` collapses it once the page is scrolled and brings it
+back at the top; the height animation is driven by `--topbar-h`, so the mobile
+menu's max-height stays correct in both states.
+
+Every value comes from Site settings, and each row is guarded - a number that
+has not been filled in yet leaves no empty icon behind.
+{% endcomment %}
+{% if site.phone or site.email or site.address or site.hours or social_links %}
+<div class="topbar">
+    <div class="shell topbar__inner">
+        <ul class="topbar__contact">
+            {% if site.phone %}
+                <li>
+                    <a href="{{ site.phone_href }}">
+                        <svg aria-hidden="true"><use href="#i-phone"></use></svg>
+                        <span>{{ site.phone }}</span>
+                    </a>
+                </li>
+            {% endif %}
+            {% if site.email %}
+                <li class="topbar__email">
+                    <a href="mailto:{{ site.email }}">
+                        <svg aria-hidden="true"><use href="#i-mail"></use></svg>
+                        <span>{{ site.email }}</span>
+                    </a>
+                </li>
+            {% endif %}
+            {% if site.address %}
+                <li class="topbar__address">
+                    <svg aria-hidden="true"><use href="#i-pin"></use></svg>
+                    <span>{{ site.address }}</span>
+                </li>
+            {% endif %}
+        </ul>
+
+        <div class="topbar__meta">
+            {% if site.hours %}
+                <p class="topbar__hours">
+                    <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+                    <span>{{ site.hours }}</span>
+                </p>
+            {% endif %}
+
+            {% if social_links %}
+                {% comment %}
+                Same rule as the footer: a published row with no address yet
+                still shows its icon, dimmed and marked aria-disabled so it
+                does not promise a destination.
+                {% endcomment %}
+                <ul class="topbar__social">
+                    {% for social in social_links %}
+                        <li>
+                            <a href="{{ social.href }}"
+                               aria-label="{{ site.name }} on {{ social.label }}"
+                               {% if social.has_link %}rel="noopener" target="_blank"{% else %}aria-disabled="true" class="is-placeholder"{% endif %}>
+                                <svg aria-hidden="true"><use href="#i-{{ social.icon }}"></use></svg>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

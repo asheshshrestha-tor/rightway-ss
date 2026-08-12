@@ -2,6 +2,7 @@
    - mobile navigation toggle
    - dropdown menus (hover on desktop, tap/click on touch + mobile)
    - FAQ accordion
+   - collapsing utility bar in the header
 */
 (function () {
     'use strict';
@@ -9,6 +10,7 @@
     document.documentElement.classList.add('js-ready');
 
     var DESKTOP = window.matchMedia('(min-width: 961px)');
+    var header = document.querySelector('.site-header');
 
     /* ------------------------------------------------------------ mobile nav */
 
@@ -19,12 +21,21 @@
         if (!nav || !toggle) return;
         nav.classList.remove('is-open');
         toggle.setAttribute('aria-expanded', 'false');
+        // Scrolling with the menu open leaves the topbar frozen - see
+        // applyScrollState - so catch it up once the menu is out of the way.
+        applyScrollState();
     }
 
     if (toggle && nav) {
+        // Closing goes through closeNav rather than a plain toggle, so the
+        // topbar it was holding open gets its catch-up call.
         toggle.addEventListener('click', function () {
-            var open = nav.classList.toggle('is-open');
-            toggle.setAttribute('aria-expanded', String(open));
+            if (nav.classList.contains('is-open')) {
+                closeNav();
+                return;
+            }
+            nav.classList.add('is-open');
+            toggle.setAttribute('aria-expanded', 'true');
         });
     }
 
@@ -135,20 +146,57 @@
         });
     }
 
-    /* --------------------------------------------------- sticky-header anchors */
+    /* ------------------------------------------------------ collapsing topbar */
 
-    // Offset in-page jumps so the sticky header does not cover the target.
-    function offsetForHeader() {
-        if (!location.hash) return;
-        var target = document.querySelector(location.hash);
-        if (!target) return;
-        var header = document.querySelector('.site-header');
-        var offset = header ? header.offsetHeight + 16 : 0;
-        window.scrollBy(0, -offset);
+    // The utility bar (phone, email, address, hours) is only worth its height
+    // while someone is still deciding whether to get in touch. Once they start
+    // reading it folds away, leaving a slimmer sticky nav, and it comes back
+    // when they return to the top of the page.
+    //
+    // Two thresholds rather than one: collapsing and expanding at the same
+    // point would let the header flip back and forth around that scroll
+    // position, and collapsing shortens the document, which can nudge the
+    // scroll position back over the line on its own.
+    var topbar = header ? header.querySelector('.topbar') : null;
+    var COLLAPSE_BELOW = 90;   // scrolled this far down: fold the bar away
+    var EXPAND_ABOVE = 8;      // back at the very top: bring it back
+    var condensed = false;
+    var scrollQueued = false;
+
+    function applyScrollState() {
+        scrollQueued = false;
+        if (!header || !topbar) return;
+
+        // Holding the bar open while the mobile menu is down: the menu hangs
+        // off the bottom of the header, so resizing it mid-scroll drags the
+        // open menu up the screen.
+        if (nav && nav.classList.contains('is-open')) return;
+
+        var y = window.pageYOffset || document.documentElement.scrollTop;
+        var next = condensed ? y > EXPAND_ABOVE : y > COLLAPSE_BELOW;
+        if (next === condensed) return;
+
+        condensed = next;
+        header.classList.toggle('is-condensed', condensed);
     }
 
-    window.addEventListener('hashchange', offsetForHeader);
-    window.addEventListener('load', function () {
-        window.setTimeout(offsetForHeader, 0);
-    });
+    function onScroll() {
+        if (scrollQueued) return;
+        scrollQueued = true;
+        window.requestAnimationFrame(applyScrollState);
+    }
+
+    if (header && topbar) {
+        window.addEventListener('scroll', onScroll, { passive: true });
+        // Reloading or coming back through history restores the old scroll
+        // position, so the bar has to start in the state that matches it.
+        applyScrollState();
+    }
+
+    /* --------------------------------------------------- sticky-header anchors */
+
+    // Nothing to do here any more: `scroll-margin-top` in style.css keeps
+    // in-page jumps clear of the header. It used to be a scrollBy() correction
+    // fired after load, which cancelled the browser's own smooth scroll to the
+    // fragment and left the link doing nothing at all.
 })();

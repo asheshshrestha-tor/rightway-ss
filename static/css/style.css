@@ -43,6 +43,11 @@
     --shadow: 0 12px 30px rgba(11, 37, 69, 0.08);
     --shadow-lg: 0 24px 60px rgba(11, 37, 69, 0.12);
     --header-h: 84px;
+
+    /* Height of the utility bar above the nav. Lives on :root so that
+       scroll-margin-top can reach it; .site-header.is-condensed zeroes it
+       locally, which is what animates the collapse. */
+    --topbar-h: 42px;
 }
 
 /* ---------------------------------------------------------------- reset */
@@ -55,6 +60,21 @@
 
 html {
     scroll-behavior: smooth;
+}
+
+/* Keep in-page jumps clear of the sticky header. Doing this in CSS rather than
+   correcting the scroll position afterwards in JS matters: with smooth
+   scrolling the browser's jump is animated, and a scrollBy() fired on load
+   cancels it outright, which used to leave anchor links sitting at the top of
+   the page.
+
+   The topbar's height is part of the sum because the browser aims at the
+   layout as it stands - bar still open - and the bar then folds away, which
+   shortens the document and pulls the target up by exactly that much.
+
+   :where() keeps this at zero specificity so a component can still override it. */
+:where([id]) {
+    scroll-margin-top: calc(var(--header-h) + var(--topbar-h) + 1rem);
 }
 
 body {
@@ -292,6 +312,123 @@ ul { margin: 0; padding: 0; list-style: none; }
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line-soft);
+    transition: box-shadow 0.25s ease;
+}
+
+/* Scrolled away from the top: the utility bar folds up and the header lifts
+   off the page a little, so the nav reads as floating over the content.
+   Zeroing --topbar-h here rather than on .topbar is what also keeps the mobile
+   menu's max-height honest in both states - it inherits down. */
+.site-header.is-condensed {
+    --topbar-h: 0px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ------------------------------------------------------------- topbar */
+
+.topbar {
+    height: var(--topbar-h);
+    overflow: hidden;
+    background: linear-gradient(90deg, var(--green-dark) 0%, var(--green) 100%);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.82rem;
+    transition: height 0.3s ease, opacity 0.2s ease;
+}
+
+.site-header.is-condensed .topbar {
+    opacity: 0;
+}
+
+.topbar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    /* Matches --topbar-h. Fixing it rather than padding the row keeps the
+       content vertically centred while the wrapper animates to zero. */
+    height: 42px;
+}
+
+.topbar__contact,
+.topbar__meta {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    min-width: 0;
+}
+
+.topbar__contact > li,
+.topbar__hours {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.topbar a {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    color: inherit;
+    transition: color 0.2s ease;
+}
+
+.topbar a:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+.topbar svg {
+    width: 15px;
+    height: 15px;
+    opacity: 0.75;
+}
+
+/* min-width:0 so a long email can actually shrink - a flex item defaults to
+   min-width:auto, which is its full content width, and would push the hours
+   off the row instead of truncating. */
+.topbar span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.topbar__social {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.topbar__social a {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    transition: background 0.2s ease;
+}
+
+.topbar__social a:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.topbar__social a.is-placeholder {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.topbar__social a.is-placeholder:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.topbar__social svg {
+    width: 13px;
+    height: 13px;
+    opacity: 1;
 }
 
 .header-inner {
@@ -1652,6 +1789,16 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 /* --------------------------------------------------------- responsive */
 
+/* The topbar sheds items as the room runs out, longest and most redundant
+   first, so that what is left always reads in full rather than everything
+   truncating together. Order: address, then hours and socials, then email -
+   the phone number is the one thing that never goes. */
+@media (max-width: 1200px) {
+    /* Selected through the parent so this outranks `.topbar__contact > li`,
+       which sets display:flex and would otherwise win on specificity. */
+    .topbar__contact > .topbar__address { display: none; }
+}
+
 @media (max-width: 1080px) {
     .footer-grid { grid-template-columns: 1fr 1fr 1fr; }
     .footer-brand { grid-column: 1 / -1; }
@@ -1661,6 +1808,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 @media (max-width: 960px) {
     :root { --header-h: 72px; }
 
+    :root { --topbar-h: 38px; }
+    .topbar__inner { height: 38px; gap: 1rem; }
+    .topbar__contact { gap: 1rem; }
+
     .nav-toggle { display: grid; place-items: center; }
 
     .primary-nav {
@@ -1668,7 +1819,7 @@ ul { margin: 0; padding: 0; list-style: none; }
         top: 100%;
         left: 0;
         right: 0;
-        max-height: calc(100vh - var(--header-h));
+        max-height: calc(100vh - var(--header-h) - var(--topbar-h));
         overflow-y: auto;
         padding: 0.75rem var(--gutter) 1.25rem;
         background: #fff;
@@ -1740,6 +1891,15 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 
 @media (max-width: 720px) {
+    /* Phone and email only. Hours and the social icons are nice-to-have; on a
+       phone the tap-to-call link is the whole point of this bar. */
+    .topbar__hours,
+    .topbar__social { display: none; }
+
+    .topbar__inner { justify-content: flex-start; }
+    .topbar__contact { gap: 1.1rem; width: 100%; }
+    .topbar__email { min-width: 0; }
+
     .hero-inner,
     .card-grid--4,
     .card-grid--3,
@@ -1811,6 +1971,12 @@ ul { margin: 0; padding: 0; list-style: none; }
 @media (max-width: 460px) {
     .footer-grid { grid-template-columns: 1fr; }
     .hero-actions .btn { width: 100%; justify-content: center; }
+
+    /* An email address this long cannot share a line with the number without
+       one of them truncating to nothing useful. The number wins. */
+    .topbar__contact > .topbar__email { display: none; }
+    .topbar__inner { justify-content: center; }
+    .topbar__contact { width: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
