@@ -86,6 +86,9 @@ It needs an identity that can create buckets and IAM users, which a
 narrowly-scoped user cannot do - use an admin profile for setup, and never from
 the app. It is safe to re-run; each step skips whatever already exists.
 
+To do it through the console instead, one screen at a time, follow
+[s3-console-setup.md](s3-console-setup.md).
+
 The rest of this section is what that script does, for when you would rather do
 it by hand or need to change one piece. The JSON is in
 [`scripts/aws/`](../scripts/aws/); replace the bucket names if yours differ -
