@@ -77,8 +77,19 @@ check the current ones for your region rather than trusting a number here.
 
 ## Setting up AWS
 
-The JSON referenced below is in [`scripts/aws/`](../scripts/aws/). Replace the
-bucket names if yours differ - they appear inside the policy files too.
+[`scripts/aws/create-buckets.sh`](../scripts/aws/create-buckets.sh) does all of
+this in one go and prints the environment variables at the end:
+
+    AWS_PROFILE=admin ./scripts/aws/create-buckets.sh
+
+It needs an identity that can create buckets and IAM users, which a
+narrowly-scoped user cannot do - use an admin profile for setup, and never from
+the app. It is safe to re-run; each step skips whatever already exists.
+
+The rest of this section is what that script does, for when you would rather do
+it by hand or need to change one piece. The JSON is in
+[`scripts/aws/`](../scripts/aws/); replace the bucket names if yours differ -
+they appear inside the policy files too, and the script substitutes them for you.
 
 ### 1. Buckets
 
