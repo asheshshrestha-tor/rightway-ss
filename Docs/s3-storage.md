@@ -135,10 +135,17 @@ The media bucket only gets the incomplete-upload cleanup. Its objects are small
 and read constantly, so they stay in Standard - moving them anywhere else would
 cost more, not less.
 
-The private bucket also cools resumes as they age: Standard for the first 30
-days while the role is being filled, Standard-IA to 180 days, then Glacier
-Instant Retrieval, which is still an ordinary instant download when a staff
-member opens one.
+The private bucket also cools resumes as they age - Standard for the first 30
+days while the role is being filled, then Standard-IA - and deletes them at 12
+months.
+
+Be clear-eyed about the scale here: at 500 resumes a year the entire archive
+costs about four cents a year, and the transition rule saves well under one of
+them. It is there because it scales correctly if the volume ever grows, not
+because it changes this year's bill. Glacier was deliberately left out for the
+same reason in reverse: at a 12-month retention it would save a fraction of a
+cent per resume while adding a per-GB retrieval charge every time someone opens
+an older one.
 
 ### 4. An IAM user for the app
 
@@ -215,20 +222,21 @@ instances.
 
 ---
 
-## A decision to make: how long to keep resumes
+## Resume retention is 12 months
 
-`lifecycle-private.json` contains a rule called `delete-resumes-after-24-months`
-which is **disabled**, because the retention period is a business decision
-rather than a technical one.
+`lifecycle-private.json` deletes anything under `resumes/` after 365 days.
 
 Australian Privacy Principle 11.2 requires destroying personal information once
-it is no longer needed for the purpose it was collected for. For unsuccessful
-applicants that is usually taken to be 12 to 24 months. Enabling the rule is
-both the compliance answer and, over years of applications, the cost answer.
+it is no longer needed for the purpose it was collected for, and 12 months is a
+defensible reading of that for unsuccessful applicants. It is a compliance
+decision that happens to also be a cost one.
 
-Change `"Status": "Disabled"` to `"Enabled"`, adjust `"Days"`, and re-apply.
-Note that this deletes the object but not the `Application` row, which will then
-show a resume that 404s - so decide deliberately rather than by default.
+**S3 deletes the object; the `Application` row stays.** A record older than a
+year will still list a resume, and the download will 404. That is by design -
+the application history stays readable - but staff should know to expect it.
+
+To change the period, edit `"Days"` and re-apply. To stop deleting altogether,
+set that rule's `"Status"` to `"Disabled"`.
 
 ---
 
