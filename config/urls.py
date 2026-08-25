@@ -23,7 +23,11 @@ urlpatterns = [
     path("", include("pages.urls")),
 ]
 
-if settings.DEBUG:
+# With USE_S3 on, neither branch fires: uploaded images are served from the
+# bucket (or the CDN in front of it), and a resume is reached through a signed,
+# expiring URL minted by dashboard.careers_views.application_resume. SERVE_MEDIA
+# defaults to off in that case, so nothing here has to be turned off by hand.
+if settings.DEBUG and not settings.USE_S3:
     # Uploaded service images, logos and team photos.
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 elif settings.SERVE_MEDIA:

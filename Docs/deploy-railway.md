@@ -160,15 +160,15 @@ shipped in `static/`, so those pages render either way.
 
 ### When a volume is not enough
 
-A volume is right for one instance, which is what this project needs. Move to
-object storage (S3, Cloudflare R2, Backblaze B2) if you ever need more than one
-replica, since a volume cannot be shared between them, or want backups and CDN
-delivery of uploads.
+A volume is right for one instance. Move to object storage if you ever need
+more than one replica, since a volume cannot be shared between them, or want
+uploads delivered from a CDN.
 
-That means `django-storages` and a `STORAGES["default"]` backend. The résumé
-download already goes through Django's storage API rather than a filesystem
-path, so it ports without changes — but keep the bucket **private** and keep
-serving résumés through the permission-checked view, never a public URL.
+That is already built: set `USE_S3=True` and the `AWS_*` variables, and uploads
+go to S3 instead. Two buckets, one public and one for résumés that is never
+served by URL, plus the commands to shrink the images and move what is already
+on the volume. See [s3-storage.md](s3-storage.md) — including the cutover
+steps, which want running in a particular order.
 
 ## 6. Generate a domain
 

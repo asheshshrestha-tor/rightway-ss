@@ -137,13 +137,28 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# The manifest backend hashes every filename, so a CSS change reaches visitors
-# immediately instead of waiting out a cached copy, and "Compressed" pre-builds
-# the gzip/brotli variants. It is opt-in because it refuses to resolve a static
-# file until `collectstatic` has written the manifest - which would make the
-# test suite fail on a fresh clone. The Dockerfile turns it on for production.
+# --- File storage ----------------------------------------------------------
+# Uploads go to S3 in production and to the filesystem everywhere else. Off by
+# default so a fresh clone, the test suite and local development all run with
+# no AWS account involved.
+USE_S3 = env.bool("USE_S3", default=False)
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # Resumes. A named backend of its own rather than another folder under
+    # "default", because the two have opposite rules: everything in "default"
+    # is world-readable by design, and nothing in "private" ever may be.
+    "private": {"BACKEND": "pages.vacancy_models.PrivateMediaStorage"},
+    # The manifest backend hashes every filename, so a CSS change reaches
+    # visitors immediately instead of waiting out a cached copy, and
+    # "Compressed" pre-builds the gzip/brotli variants. It is opt-in because it
+    # refuses to resolve a static file until `collectstatic` has written the
+    # manifest - which would make the test suite fail on a fresh clone. The
+    # Dockerfile turns it on for production.
+    #
+    # Static files stay here even with USE_S3 on. WhiteNoise already serves
+    # them from the app process under hashed, far-future-cacheable names, so
+    # putting them in a bucket would add cost and a deploy step to buy nothing.
     "staticfiles": {
         "BACKEND": env(
             "STATICFILES_BACKEND",
@@ -155,18 +170,81 @@ STORAGES = {
 MEDIA_URL = "media/"
 MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "media")
 
-# Uploaded images have to be served by something. On a container host there is
-# no web server in front, so Django does it - see config/urls.py. Turn this off
-# only when something else is serving MEDIA_URL, such as a CDN or object
-# storage; leaving it off with nothing in front means every uploaded logo and
-# photo 404s. It never exposes PRIVATE_MEDIA_ROOT, which is a separate
-# directory reached only through a permission-checked view.
-SERVE_MEDIA = env.bool("SERVE_MEDIA", default=True)
-
 # Uploaded resumes are personal information and must never be reachable by
-# guessing a URL. They live outside MEDIA_ROOT and are served only through a
-# permission-checked view (dashboard.careers_views.application_resume).
+# guessing a URL. On the filesystem they live outside MEDIA_ROOT; on S3 they
+# live in a different bucket entirely. Either way the only way to read one is
+# `dashboard.careers_views.application_resume`, which checks permissions.
 PRIVATE_MEDIA_ROOT = env.path("PRIVATE_MEDIA_ROOT", default=BASE_DIR / "private-media")
+
+# Uploaded images have to be served by something. On a container host there is
+# no web server in front, so Django does it - see config/urls.py. With USE_S3
+# the bucket does it instead and this turns itself off; leaving it off with
+# nothing in front means every uploaded logo and photo 404s. It never exposes
+# PRIVATE_MEDIA_ROOT, which is a separate directory reached only through a
+# permission-checked view.
+SERVE_MEDIA = env.bool("SERVE_MEDIA", default=not USE_S3)
+
+if USE_S3:
+    # Sydney by default: it is the closest region to the people using this
+    # site, and resumes are personal information that is better kept onshore.
+    _AWS = {
+        "access_key": env("AWS_ACCESS_KEY_ID"),
+        "secret_key": env("AWS_SECRET_ACCESS_KEY"),
+        "region_name": env("AWS_S3_REGION_NAME", default="ap-southeast-2"),
+        "signature_version": "s3v4",
+        # Without this boto3 builds URLs against the legacy global endpoint,
+        # `bucket.s3.amazonaws.com`, and every request to a bucket outside
+        # us-east-1 pays a 307 redirect to the regional one before it can be
+        # answered. "virtual" addresses the region directly. Path style is the
+        # other option and is deprecated.
+        "addressing_style": "virtual",
+        # Both buckets have ACLs disabled ("Bucket owner enforced", which is
+        # the default for new buckets). Sending an ACL with an upload would be
+        # rejected outright, so do not set one.
+        "default_acl": None,
+        # What FileSystemStorage already does: a second upload of the same name
+        # is stored beside the first under a suffix, rather than overwriting a
+        # file that some other row still points at.
+        "file_overwrite": False,
+    }
+
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_AWS,
+            "bucket_name": env("AWS_STORAGE_BUCKET_NAME"),
+            "location": "media",
+            # Unsigned, so the URL of a logo is stable and every cache between
+            # the bucket and the visitor can keep it. Signing would put an
+            # expiring query string on every <img> src, which busts all of them
+            # and turns each page view back into a billed request.
+            "querystring_auth": False,
+            # A CloudFront domain in front of the bucket, when there is one.
+            "custom_domain": env("AWS_S3_CUSTOM_DOMAIN", default=""),
+            # Safe to cache forever because nothing is ever overwritten in
+            # place: file_overwrite is off, so a replacement gets a new name
+            # and the old URL simply stops being referenced.
+            "object_parameters": {
+                "CacheControl": env(
+                    "AWS_MEDIA_CACHE_CONTROL",
+                    default="public, max-age=31536000, immutable",
+                )
+            },
+        },
+    }
+
+    STORAGES["private"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            **_AWS,
+            "bucket_name": env("AWS_PRIVATE_STORAGE_BUCKET_NAME"),
+            # Signed and short-lived, and explicitly never routed through the
+            # public CDN even if one is configured above.
+            "querystring_auth": True,
+            "querystring_expire": env.int("AWS_PRIVATE_URL_EXPIRY", default=300),
+            "custom_domain": None,
+        },
+    }
 
 # Applicants upload documents, not archives or executables.
 RESUME_ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt"]

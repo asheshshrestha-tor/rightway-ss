@@ -1,8 +1,10 @@
 """Uploads are shrunk on the way into storage."""
 
 import io
+import mimetypes
 import tempfile
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -153,3 +155,21 @@ class MetadataTests(TestCase):
         payload = imaging.encode(upload, imaging.TEAM_PHOTO)
 
         self.assertNotIn(b"SecretCameraCo", payload)
+
+
+class ContentTypeTests(TestCase):
+    """Registered in `PagesConfig.ready`, and worth a test because getting it
+    wrong fails silently and permanently.
+
+    S3 records a Content-Type when an object is written and only a re-upload
+    changes it, so an unrecognised extension would leave every image in the
+    bucket stored as `binary/octet-stream`.
+    """
+
+    def test_webp_is_recognised(self):
+        self.assertEqual(mimetypes.guess_type("photo.webp")[0], "image/webp")
+
+    def test_the_resume_formats_are_recognised(self):
+        for extension in settings.RESUME_ALLOWED_EXTENSIONS:
+            with self.subTest(extension=extension):
+                self.assertIsNotNone(mimetypes.guess_type(f"cv{extension}")[0])

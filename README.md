@@ -569,9 +569,11 @@ data loss rather than an error, is in
 
 Whatever the host, it needs:
 
-- A **persistent volume** for `MEDIA_ROOT` and `PRIVATE_MEDIA_ROOT`. Container
-  filesystems are wiped on redeploy, taking every uploaded image and résumé
-  with them.
+- Somewhere for uploads to live. Either **S3** — see
+  [Docs/s3-storage.md](Docs/s3-storage.md), which is also what lifts the
+  single-replica limit — or a **persistent volume** for `MEDIA_ROOT` and
+  `PRIVATE_MEDIA_ROOT`. Container filesystems are wiped on redeploy, taking
+  every uploaded image and résumé with them.
 - `TRUST_PROXY_SSL_HEADER=True` wherever TLS terminates at an edge proxy, or
   `SECURE_SSL_REDIRECT` loops forever.
 - MySQL's **timezone tables loaded** — see [Docs/mysql.md](Docs/mysql.md).

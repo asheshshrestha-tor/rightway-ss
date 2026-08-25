@@ -7,7 +7,7 @@ readable now that the app carries several models.
 import os
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import FileSystemStorage, storages
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -15,11 +15,14 @@ from django.utils.text import slugify
 
 
 class PrivateMediaStorage(FileSystemStorage):
-    """Storage for files that must never be served by URL.
+    """Filesystem storage for files that must never be served by URL.
 
     Resumes contain personal information, so they live outside MEDIA_ROOT and
     are therefore unreachable over MEDIA_URL. The only way to read one is
     `dashboard.careers_views.application_resume`, which checks permissions.
+
+    Used when USE_S3 is off. With it on, `private_storage` returns an S3
+    backend pointed at a bucket of its own instead.
 
     The location is resolved on access rather than at import, for two reasons:
     passing `location=settings.PRIVATE_MEDIA_ROOT` to `__init__` would bake an
@@ -44,7 +47,15 @@ class PrivateMediaStorage(FileSystemStorage):
         return ("pages.vacancy_models.PrivateMediaStorage", [], {})
 
 
-private_storage = PrivateMediaStorage()
+def private_storage():
+    """The backend resumes are stored on, chosen once at startup.
+
+    A callable rather than an instance so that swapping the filesystem for a
+    bucket stays an environment change: `FileField` records a reference to this
+    function in the migration, never the backend it happens to return, so no
+    machine's absolute paths or anyone's bucket name is baked into the history.
+    """
+    return storages["private"]
 
 
 class VacancyQuerySet(models.QuerySet):
@@ -158,9 +169,17 @@ class Vacancy(models.Model):
 
 
 def resume_path(instance, filename):
-    """Namespace uploads by vacancy so the private folder stays navigable."""
+    """Namespace uploads by vacancy so the private folder stays navigable.
+
+    The name is slugified on the way in. Applicants send files called things
+    like "Dana Whitfield CV (final copy).docx", and once that is an S3 key
+    every consumer of the URL has to percent-encode the spaces and brackets.
+    The extension is kept - it is what the download is opened with - and the
+    name shown to staff comes from the application, not from this.
+    """
     bucket = instance.vacancy.slug if instance.vacancy else "speculative"
-    return f"resumes/{bucket}/{filename}"
+    stem, extension = os.path.splitext(filename)
+    return f"resumes/{bucket}/{slugify(stem)[:80] or 'resume'}{extension.lower()}"
 
 
 class Application(models.Model):
