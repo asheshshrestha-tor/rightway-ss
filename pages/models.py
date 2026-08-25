@@ -6,6 +6,8 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.text import slugify
 
+from . import imaging
+
 
 # Careers and consultation models live in their own modules for readability;
 # re-exported here so `from pages.models import Vacancy` keeps working like any
@@ -118,6 +120,7 @@ class Service(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = self._unique_slug()
+        imaging.optimize_field(self, "image", imaging.SERVICE_IMAGE)
         super().save(*args, **kwargs)
 
     def _unique_slug(self):

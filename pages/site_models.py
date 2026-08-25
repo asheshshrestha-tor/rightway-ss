@@ -14,6 +14,8 @@ from urllib.parse import quote_plus
 from django.db import models
 from django.templatetags.static import static
 
+from . import imaging
+
 # Matches the ids in templates/partials/icon_sprite.html, so an editor can only
 # pick a platform the site can actually draw.
 SOCIAL_PLATFORMS = [
@@ -118,6 +120,12 @@ class SiteSettings(models.Model):
         "adding" turns that into an UPDATE of the existing row.
         """
         self.pk = 1
+        for field, spec in (
+            ("logo", imaging.LOGO),
+            ("logo_light", imaging.LOGO),
+            ("favicon", imaging.FAVICON),
+        ):
+            imaging.optimize_field(self, field, spec)
         if type(self).objects.filter(pk=1).exists():
             self._state.adding = False
             kwargs.pop("force_insert", None)

@@ -11,6 +11,8 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.text import slugify
 
+from . import imaging
+
 
 class TeamMemberQuerySet(models.QuerySet):
     def published(self):
@@ -57,6 +59,7 @@ class TeamMember(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = self._unique_slug()
+        imaging.optimize_field(self, "photo", imaging.TEAM_PHOTO)
         super().save(*args, **kwargs)
 
     def _unique_slug(self):
