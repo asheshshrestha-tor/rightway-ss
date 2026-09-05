@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 #
 # Creates the two S3 buckets this project uses, locks them down, applies the
-# lifecycle rules, and makes the IAM user the app authenticates as.
+# lifecycle rules, and makes the IAM user the app authenticates as. The same
+# user may send mail through SES; re-run this after verifying the domain there
+# and the policy is refreshed. The SES identity itself is set up separately -
+# see Docs/email.md.
 #
 # Read it before running it. It creates billable AWS resources and prints an
 # access key secret to the terminal.
@@ -135,7 +138,7 @@ sed -e "s/rightway-media/$MEDIA_BUCKET/g" -e "s/rightway-private/$PRIVATE_BUCKET
   "$HERE/iam-policy.json" > "$WORK/iam-policy.json"
 aws_ iam put-user-policy --user-name "$IAM_USER" \
   --policy-name rightway-s3 --policy-document "file://$WORK/iam-policy.json"
-ok "$IAM_USER scoped to those two buckets and nothing else"
+ok "$IAM_USER scoped to those two buckets, plus sending mail through SES"
 
 say "5. Access key"
 

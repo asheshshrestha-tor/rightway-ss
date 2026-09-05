@@ -239,6 +239,12 @@ and replace what is there with:
             "arn:aws:s3:::rightway-media/*",
             "arn:aws:s3:::rightway-private/*"
           ]
+        },
+        {
+          "Sid": "SendMailThroughSES",
+          "Effect": "Allow",
+          "Action": ["ses:SendEmail", "ses:SendRawEmail"],
+          "Resource": "*"
         }
       ]
     }
@@ -246,9 +252,11 @@ and replace what is there with:
 Name it `rightway-s3` and create it. Back on the first tab, refresh the policy
 list, tick `rightway-s3`, and finish creating the user.
 
-Read, write and delete on those two buckets and nothing else. No `s3:*`, no
-ability to change a bucket policy, no access to anything else in the account. If
-these credentials ever leak, that is the whole blast radius.
+Read, write and delete on those two buckets, and sending mail through SES (the
+site's email goes out through the same user - see [email.md](email.md)). Nothing
+else: no `s3:*`, no ability to change a bucket policy, no access to anything
+else in the account. If these credentials ever leak, that is the whole blast
+radius.
 
 ---
 

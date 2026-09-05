@@ -164,7 +164,8 @@ an older one.
 ### 4. An IAM user for the app
 
 Railway has no instance roles, so the app authenticates with a key pair. The
-policy grants read, write and delete on those two buckets and nothing else - no
+policy grants read, write and delete on those two buckets, plus `ses:SendEmail`
+so the same user can send mail (see [email.md](email.md)) - and nothing else. No
 `s3:*`, and no ability to change a bucket policy.
 
     aws iam create-user --user-name rightway-app

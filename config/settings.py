@@ -260,16 +260,48 @@ LOGIN_REDIRECT_URL = "dashboard:index"
 LOGOUT_REDIRECT_URL = "dashboard:login"
 
 # --- Email -----------------------------------------------------------------
-# Defaults to the console backend so the contact form works out of the box;
-# set EMAIL_URL in .env to send for real.
+# Defaults to the console backend so the contact form works out of the box.
+# To send for real, set EMAIL_BACKEND in .env to one of:
+#
+#   config.ses_backend.SESEmailBackend            Amazon SES over its API
+#   django.core.mail.backends.smtp.EmailBackend   any SMTP server
+#
+# Docs/email.md covers both.
 EMAIL_BACKEND = env(
     "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
 )
+
+# Only read by the SMTP backend.
 EMAIL_HOST = env("EMAIL_HOST", default="")
 EMAIL_PORT = env("EMAIL_PORT")
 EMAIL_USE_TLS = env("EMAIL_USE_TLS")
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+
+# Only read by the SES backend (config/ses_backend.py). The region must be the
+# one the sending domain is verified in - SES identities are regional, and a
+# client pointed at the wrong region is refused with "email address is not
+# verified" even though it is, elsewhere. Sydney by default, to match the
+# buckets.
+#
+# The credentials default to the S3 key pair so one IAM user serves both;
+# scripts/aws/iam-policy.json grants it ses:SendEmail. Set the SES-specific
+# names only if mail should use a different identity. Empty means "let boto3
+# find credentials itself" - an instance or task role on a host that has one.
+AWS_SES_REGION_NAME = env(
+    "AWS_SES_REGION_NAME",
+    default=env("AWS_S3_REGION_NAME", default="ap-southeast-2"),
+)
+AWS_SES_ACCESS_KEY_ID = env(
+    "AWS_SES_ACCESS_KEY_ID", default=env("AWS_ACCESS_KEY_ID", default="")
+)
+AWS_SES_SECRET_ACCESS_KEY = env(
+    "AWS_SES_SECRET_ACCESS_KEY", default=env("AWS_SECRET_ACCESS_KEY", default="")
+)
+# Optional. An SES configuration set turns on per-message event tracking -
+# bounces, complaints, deliveries - in CloudWatch or SNS. Leave empty to send
+# without one.
+AWS_SES_CONFIGURATION_SET = env("AWS_SES_CONFIGURATION_SET", default="")
 
 DEFAULT_FROM_EMAIL = env(
     "DEFAULT_FROM_EMAIL", default="no-reply@rightwaysupportservices.com.au"

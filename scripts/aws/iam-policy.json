@@ -22,6 +22,15 @@
         "arn:aws:s3:::rightway-media/*",
         "arn:aws:s3:::rightway-private/*"
       ]
+    },
+    {
+      "Sid": "SendMailThroughSES",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail"
+      ],
+      "Resource": "*"
     }
   ]
 }

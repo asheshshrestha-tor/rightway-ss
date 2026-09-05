@@ -250,19 +250,21 @@ python manage.py createsuperuser
 ## 9. Set up real email
 
 The console backend prints to the log and sends nothing, so contact forms,
-consultation confirmations and password resets all silently go nowhere. Add:
+consultation confirmations and password resets all silently go nowhere. Mail
+goes through Amazon SES, using the same AWS key pair as the buckets. Add:
 
 ```ini
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.your-provider.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-username
-EMAIL_HOST_PASSWORD=your-password
+EMAIL_BACKEND=config.ses_backend.SESEmailBackend
 ```
 
-Use a transactional provider such as Postmark, SendGrid, Mailgun or SES.
-Consumer Gmail will rate-limit and eventually block this.
+That is all on the Railway side. On the AWS side the domain must be verified in
+SES in the same region as the buckets, the account must be out of the SES
+sandbox, and the IAM user must have the current `scripts/aws/iam-policy.json`
+applied. [email.md](email.md) walks through each.
+
+Any SMTP provider works instead (`EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`
+plus `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`,
+`EMAIL_HOST_PASSWORD`). Consumer Gmail will rate-limit and eventually block this.
 
 Test it by submitting the contact form and confirming the mail arrives.
 
