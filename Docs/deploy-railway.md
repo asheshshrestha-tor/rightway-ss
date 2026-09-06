@@ -160,15 +160,15 @@ shipped in `static/`, so those pages render either way.
 
 ### When a volume is not enough
 
-A volume is right for one instance, which is what this project needs. Move to
-object storage (S3, Cloudflare R2, Backblaze B2) if you ever need more than one
-replica, since a volume cannot be shared between them, or want backups and CDN
-delivery of uploads.
+A volume is right for one instance. Move to object storage if you ever need
+more than one replica, since a volume cannot be shared between them, or want
+uploads delivered from a CDN.
 
-That means `django-storages` and a `STORAGES["default"]` backend. The résumé
-download already goes through Django's storage API rather than a filesystem
-path, so it ports without changes — but keep the bucket **private** and keep
-serving résumés through the permission-checked view, never a public URL.
+That is already built: set `USE_S3=True` and the `AWS_*` variables, and uploads
+go to S3 instead. Two buckets, one public and one for résumés that is never
+served by URL, plus the commands to shrink the images and move what is already
+on the volume. See [s3-storage.md](s3-storage.md) — including the cutover
+steps, which want running in a particular order.
 
 ## 6. Generate a domain
 
@@ -250,19 +250,21 @@ python manage.py createsuperuser
 ## 9. Set up real email
 
 The console backend prints to the log and sends nothing, so contact forms,
-consultation confirmations and password resets all silently go nowhere. Add:
+consultation confirmations and password resets all silently go nowhere. Mail
+goes through Amazon SES, using the same AWS key pair as the buckets. Add:
 
 ```ini
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.your-provider.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-username
-EMAIL_HOST_PASSWORD=your-password
+EMAIL_BACKEND=config.ses_backend.SESEmailBackend
 ```
 
-Use a transactional provider such as Postmark, SendGrid, Mailgun or SES.
-Consumer Gmail will rate-limit and eventually block this.
+That is all on the Railway side. On the AWS side the domain must be verified in
+SES in the same region as the buckets, the account must be out of the SES
+sandbox, and the IAM user must have the current `scripts/aws/iam-policy.json`
+applied. [email.md](email.md) walks through each.
+
+Any SMTP provider works instead (`EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`
+plus `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`,
+`EMAIL_HOST_PASSWORD`). Consumer Gmail will rate-limit and eventually block this.
 
 Test it by submitting the contact form and confirming the mail arrives.
 

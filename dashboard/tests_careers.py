@@ -8,6 +8,7 @@ permission-checked view.
 import shutil
 import tempfile
 from datetime import timedelta
+from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -294,3 +295,116 @@ class MediaLayoutTests(TestCase):
             f"PRIVATE_MEDIA_ROOT ({private}) is inside MEDIA_ROOT ({public}), "
             "so every applicant's resume is downloadable by guessing a URL.",
         )
+
+
+class FakeBucketStorage:
+    """Enough of the S3 backend for the view to take its object-storage path.
+
+    A stand-in rather than a mocked boto3 client: what these tests are about is
+    which branch the view takes and what it puts in the signed request, not
+    that django-storages can produce a signature.
+    """
+
+    bucket_name = "rightway-private-test"
+
+    def __init__(self, present=True):
+        self.present = present
+        self.parameters = None
+
+    def exists(self, name):
+        return self.present
+
+    def url(self, name, parameters=None, expire=None):
+        self.parameters = parameters
+        return f"https://{self.bucket_name}.s3.ap-southeast-2.amazonaws.com/{name}?X-Amz-Signature=deadbeef"
+
+
+@fast_passwords
+@override_settings(PRIVATE_MEDIA_ROOT=PRIVATE_ROOT)
+class ResumeObjectStorageTests(TestCase):
+    """Downloading a resume when it lives in a bucket rather than on disk.
+
+    The permission rules are the same either way and are covered above. What
+    changes is that the bytes go straight from the bucket to the browser, so
+    what matters here is that nothing is handed out before the check passes.
+    """
+
+    def setUp(self):
+        self.application = make_application(Vacancy.objects.get(slug="support-worker"))
+        self.url = reverse("dashboard:application_resume", args=[self.application.pk])
+        self.storage = FakeBucketStorage()
+
+    def bucket(self, storage=None):
+        return mock.patch.object(
+            Application._meta.get_field("resume"), "storage", storage or self.storage
+        )
+
+    def sign_in(self):
+        make_user("recruiter", staff=True, perms=["pages.view_application"])
+        self.client.login(username="recruiter", password="pw-for-tests-1234")
+
+    def test_authorised_staff_are_redirected_to_a_signed_url(self):
+        self.sign_in()
+
+        with self.bucket():
+            response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("X-Amz-Signature", response.url)
+        self.assertIn(self.application.resume.name, response.url)
+
+    def test_the_redirect_is_not_cached(self):
+        """The URL is a bearer token for one person's resume until it expires."""
+        self.sign_in()
+
+        with self.bucket():
+            response = self.client.get(self.url)
+
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+
+    def test_the_download_is_named_after_the_applicant(self):
+        """Otherwise every file a recruiter saves is called `resume.pdf`."""
+        self.sign_in()
+
+        with self.bucket():
+            self.client.get(self.url)
+
+        disposition = self.storage.parameters["ResponseContentDisposition"]
+        self.assertIn("attachment", disposition)
+        self.assertIn('filename="Jamie Reid - resume', disposition)
+        self.assertTrue(disposition.endswith(".pdf"))
+
+    def test_a_non_ascii_name_is_encoded_rather_than_dropped(self):
+        application = make_application(
+            Vacancy.objects.get(slug="support-worker"),
+            full_name="Zoë Ferreira",
+            email="zoe@example.com",
+        )
+        self.sign_in()
+
+        with self.bucket():
+            self.client.get(
+                reverse("dashboard:application_resume", args=[application.pk])
+            )
+
+        disposition = self.storage.parameters["ResponseContentDisposition"]
+        # The ASCII fallback keeps a readable name; `filename*` carries the real one.
+        self.assertIn('filename="Zoe Ferreira - resume', disposition)
+        self.assertIn("filename*=UTF-8''Zo%C3%AB%20Ferreira", disposition)
+
+    def test_a_row_that_outlived_its_object_404s(self):
+        """Rather than redirecting the browser to an S3 error document."""
+        self.sign_in()
+
+        with self.bucket(FakeBucketStorage(present=False)):
+            response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_no_url_is_minted_before_the_permission_check_passes(self):
+        with self.bucket():
+            response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("dashboard:login"), response.url)
+        self.assertIsNone(self.storage.parameters)

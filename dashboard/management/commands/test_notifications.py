@@ -51,7 +51,19 @@ class Command(BaseCommand):
                     "                 prints to this terminal and sends nothing"
                 )
             )
-        if settings.EMAIL_HOST:
+        if "ses_backend" in settings.EMAIL_BACKEND:
+            self.stdout.write(f"  SES region     {settings.AWS_SES_REGION_NAME}")
+            credentials = (
+                f"key {settings.AWS_SES_ACCESS_KEY_ID[:4]}..."
+                if settings.AWS_SES_ACCESS_KEY_ID
+                else "boto3 default chain (no key in .env)"
+            )
+            self.stdout.write(f"  SES auth       {credentials}")
+            if settings.AWS_SES_CONFIGURATION_SET:
+                self.stdout.write(
+                    f"  SES config set {settings.AWS_SES_CONFIGURATION_SET}"
+                )
+        elif settings.EMAIL_HOST:
             self.stdout.write(f"  SMTP host      {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
         self.stdout.write(f"  From           {settings.DEFAULT_FROM_EMAIL}")
         self.stdout.write(f"  Office inbox   {notifications.office_email()}")

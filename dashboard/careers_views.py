@@ -3,9 +3,12 @@
 Split out of `views.py` to keep that module readable.
 """
 
+import unicodedata
+from urllib.parse import quote
+
 from django.contrib import messages
 from django.db.models import Count, Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 
 from django.utils import timezone
@@ -238,27 +241,73 @@ def application_detail(request, pk):
 
 @permission_required("pages.view_application")
 def application_resume(request, pk):
-    """Stream a resume to an authorised staff member.
+    """Hand a resume to an authorised staff member.
 
-    Resumes are personal information, so they are stored outside MEDIA_ROOT and
-    are not reachable over MEDIA_URL. This view is the only way to read one,
-    and it runs behind the same permission as the application itself.
+    Resumes are personal information, so they are stored where nothing serves
+    them by URL - outside MEDIA_ROOT on the filesystem, in a bucket of their
+    own on S3 - and this view is the only way to read one. It runs behind the
+    same permission as the application itself.
+
+    On object storage the file is handed over as a short-lived signed URL
+    rather than streamed through here. The permission check is unchanged, and
+    still has to pass before any URL is minted; what changes is that the bytes
+    go straight from the bucket to the browser instead of being paid for twice
+    in egress and holding a worker open for the length of the download.
     """
     application = get_object_or_404(Application, pk=pk)
 
     if not application.resume:
         raise Http404("This application has no resume attached.")
 
+    filename = f"{application.full_name} - {application.resume_name}"
+    storage = application.resume.storage
+
+    if hasattr(storage, "bucket_name"):
+        # Checked explicitly so that a row which outlived its object 404s the
+        # same way the filesystem branch below does, rather than redirecting
+        # the browser to an S3 error document.
+        if not storage.exists(application.resume.name):
+            raise Http404("The resume file is missing from storage.")
+        return _signed_download(storage, application.resume.name, filename)
+
     try:
         handle = application.resume.open("rb")
     except FileNotFoundError:  # the row outlived the file
         raise Http404("The resume file is missing from storage.")
 
-    return FileResponse(
-        handle,
-        as_attachment=True,
-        filename=f"{application.full_name} - {application.resume_name}",
+    return FileResponse(handle, as_attachment=True, filename=filename)
+
+
+def _signed_download(storage, name, filename):
+    """Redirect to a presigned URL that downloads under a readable name.
+
+    Without `ResponseContentDisposition` the browser would save the object key
+    - `resume.pdf` for everyone. It is part of what the signature covers, so it
+    cannot be edited in the address bar to fetch something else.
+
+    The header carries the name twice because the plain `filename=` form is
+    ASCII-only and applicants' names are not; every current browser reads
+    `filename*` and ignores the other, and anything that does not still gets a
+    sensible fallback.
+    """
+    ascii_name = (
+        unicodedata.normalize("NFKD", filename)
+        .encode("ascii", "ignore")
+        .decode()
+        .replace('"', "")
     )
+    disposition = (
+        f'attachment; filename="{ascii_name or "resume"}"; '
+        f"filename*=UTF-8''{quote(filename)}"
+    )
+
+    response = HttpResponseRedirect(
+        storage.url(name, parameters={"ResponseContentDisposition": disposition})
+    )
+    # The URL is a bearer token for one person's resume. It expires on its own,
+    # but it has no business sitting in a shared or on-disk cache until then.
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 # ------------------------------------------------------------ consultations

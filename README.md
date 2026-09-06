@@ -38,7 +38,7 @@ email printed to the terminal.
 | `ALLOWED_HOSTS` | empty | Comma separated. Required once `DEBUG=False` |
 | `DATABASE_URL` | `sqlite:///db.sqlite3` | See below |
 | `CONN_MAX_AGE` | `60` | Seconds to hold a MySQL connection open |
-| `EMAIL_BACKEND` | console | Switch to SMTP to send for real |
+| `EMAIL_BACKEND` | console | `config.ses_backend.SESEmailBackend` for Amazon SES, or the SMTP backend |
 | `MEDIA_ROOT` | `./media` | Public uploads |
 | `PRIVATE_MEDIA_ROOT` | `./private-media` | Resumes. Never web-served |
 | `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_HSTS_SECONDS` | off | Turn on once TLS is in front |
@@ -188,17 +188,15 @@ invalid, and redirects with a success message when valid. Submissions are
 emailed to `CONTACT_EMAIL`.
 
 `EMAIL_BACKEND` defaults to the console backend, so enquiries print to the
-terminal and nothing needs configuring to try it out. For production, set SMTP
-credentials in `config/settings.py`:
+terminal and nothing needs configuring to try it out. Production sends through
+Amazon SES with the same AWS key pair used for uploads:
 
-```python
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "..."
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "..."
-EMAIL_HOST_PASSWORD = "..."
+```ini
+EMAIL_BACKEND=config.ses_backend.SESEmailBackend
 ```
+
+[Docs/email.md](Docs/email.md) lists every email the site sends, the SES
+setup checklist, and the SMTP alternative.
 
 ## Staff dashboard
 
@@ -569,9 +567,11 @@ data loss rather than an error, is in
 
 Whatever the host, it needs:
 
-- A **persistent volume** for `MEDIA_ROOT` and `PRIVATE_MEDIA_ROOT`. Container
-  filesystems are wiped on redeploy, taking every uploaded image and résumé
-  with them.
+- Somewhere for uploads to live. Either **S3** — see
+  [Docs/s3-storage.md](Docs/s3-storage.md), which is also what lifts the
+  single-replica limit — or a **persistent volume** for `MEDIA_ROOT` and
+  `PRIVATE_MEDIA_ROOT`. Container filesystems are wiped on redeploy, taking
+  every uploaded image and résumé with them.
 - `TRUST_PROXY_SSL_HEADER=True` wherever TLS terminates at an edge proxy, or
   `SECURE_SSL_REDIRECT` loops forever.
 - MySQL's **timezone tables loaded** — see [Docs/mysql.md](Docs/mysql.md).
