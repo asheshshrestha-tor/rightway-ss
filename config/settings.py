@@ -83,42 +83,16 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 # --- Database --------------------------------------------------------------
-# DATABASE_URL drives everything, e.g.
-#   mysql://rightway:secret@127.0.0.1:3306/rightway
-#   sqlite:///db.sqlite3
 DATABASES = {
-    "default": env.db_url(
-        "DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
-    )
-}
-
-if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
-    # `sqlite:///db.sqlite3` parses to a path relative to the working
-    # directory, which would silently create a second, empty database if the
-    # app is ever started from somewhere else. Anchor it to the project.
-    name = Path(DATABASES["default"]["NAME"])
-    if not name.is_absolute():
-        DATABASES["default"]["NAME"] = str(BASE_DIR / name)
-
-if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
-    DATABASES["default"].setdefault("OPTIONS", {})
-    DATABASES["default"]["OPTIONS"].update(
-        {
-            # utf8mb4 is the only charset that stores the full Unicode range -
-            # names with accents, and emoji in an enquiry message.
-            "charset": "utf8mb4",
-            # Without strict mode MySQL silently truncates oversized values
-            # instead of raising, so bad data lands in the table unnoticed.
-            "sql_mode": "STRICT_TRANS_TABLES",
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": env("DB_NAME"),
+            "USER": env("DB_USER", default="root"),
+            "PASSWORD": env("DB_PASSWORD", default=""),
+            "HOST": env("DB_HOST", default="127.0.0.1"),
+            "PORT": env.int("DB_PORT", default=3306),
         }
-    )
-    # Reuse connections rather than opening one per request.
-    DATABASES["default"]["CONN_MAX_AGE"] = env("CONN_MAX_AGE")
-    DATABASES["default"]["TEST"] = {
-        "CHARSET": "utf8mb4",
-        "COLLATION": "utf8mb4_unicode_ci",
     }
-
 # Enforced when a password is set through a form - the dashboard's change and
 # reset pages. Existing passwords are unaffected until they are next changed.
 AUTH_PASSWORD_VALIDATORS = [
