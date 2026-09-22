@@ -15,6 +15,11 @@ TEMPLATE_ROOT = Path(settings.BASE_DIR) / "templates"
 # An opening {# with no #} anywhere on the same line.
 UNCLOSED_SHORT_COMMENT = re.compile(r"\{#(?![^\n]*#\})")
 
+# A whole <img ...> tag, which may span several lines.
+IMG_TAG = re.compile(r"<img\b[^>]*>", re.S)
+ALT_ATTRIBUTE = re.compile(r"\balt\s*=")
+EMPTY_ALT = re.compile(r"""\balt\s*=\s*(""|'')""")
+
 
 def template_files():
     return sorted(TEMPLATE_ROOT.rglob("*.html"))
@@ -60,3 +65,23 @@ class TemplateHygieneTests(TestCase):
                     body.count("{% endcomment %}"),
                     "unbalanced {% comment %} / {% endcomment %}",
                 )
+
+    def test_every_img_has_a_non_empty_alt(self):
+        """Every <img> must carry a non-empty `alt`.
+
+        A missing `alt` makes screen readers announce the file name. An empty
+        `alt=""` is valid HTML for a decorative image, but the SEO crawler the
+        site is audited with reports it as "missing alt attribute" - so every
+        image gets a real description, even the card thumbnails whose name is
+        repeated beside them.
+        """
+        for path in template_files():
+            body = path.read_text(encoding="utf-8")
+            for match in IMG_TAG.finditer(body):
+                tag = match.group(0)
+                line = body.count("\n", 0, match.start()) + 1
+                with self.subTest(
+                    template=str(path.relative_to(TEMPLATE_ROOT)), line=line
+                ):
+                    self.assertRegex(tag, ALT_ATTRIBUTE, "<img> without an alt attribute")
+                    self.assertNotRegex(tag, EMPTY_ALT, '<img> with an empty alt=""')

@@ -156,14 +156,14 @@ logo and favicon uploads are silently dropped.
                 </div>
                 <div class="card-body pt-4">
                     <div class="brand-preview brand-preview--light mb-3">
-                        <img id="logo-preview" src="{{ object.logo_url }}" alt="">
+                        <img id="logo-preview" src="{{ object.logo_url }}" alt="Logo on a light background">
                     </div>
                     {% include "dashboard/partials/field.html" with field=form.logo %}
 
                     <div class="separator my-5"></div>
 
                     <div class="brand-preview brand-preview--dark mb-3">
-                        <img id="logo-light-preview" src="{{ object.logo_light_url }}" alt="">
+                        <img id="logo-light-preview" src="{{ object.logo_light_url }}" alt="Logo on a dark background">
                     </div>
                     {% include "dashboard/partials/field.html" with field=form.logo_light %}
                 </div>
@@ -178,9 +178,9 @@ logo and favicon uploads are silently dropped.
                 </div>
                 <div class="card-body pt-4">
                     <div class="d-flex align-items-center gap-4 mb-3">
-                        <img id="favicon-preview" src="{{ object.favicon_url }}" alt=""
+                        <img id="favicon-preview" src="{{ object.favicon_url }}" alt="Favicon at 48 pixels"
                              class="rounded" style="width:48px;height:48px;object-fit:cover">
-                        <img src="{{ object.favicon_url }}" alt=""
+                        <img src="{{ object.favicon_url }}" alt="Favicon at 16 pixels"
                              class="rounded" style="width:16px;height:16px;object-fit:cover">
                         <span class="text-muted fs-8">48px and 16px</span>
                     </div>

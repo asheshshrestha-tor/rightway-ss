@@ -60,3 +60,9 @@ def avatar_initials(user):
     if len(parts) >= 2:
         return (parts[0][0] + parts[1][0]).upper()
     return (parts[0][:2] if parts else "?").upper()
+
+
+@register.simple_tag
+def avatar_name(user):
+    """The name the avatar stands for, for its alt text."""
+    return display_name(user)

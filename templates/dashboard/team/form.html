@@ -80,7 +80,7 @@ uploaded photo is silently dropped.
                     <div class="mb-4">
                         <img id="photo-preview"
                              src="{% if object %}{{ object.photo_url }}{% else %}{% static 'images/team-placeholder.svg' %}{% endif %}"
-                             alt="" class="w-100 rounded-circle" style="aspect-ratio: 1; object-fit: cover">
+                             alt="Photo preview" class="w-100 rounded-circle" style="aspect-ratio: 1; object-fit: cover">
                         {% if object and not object.has_uploaded_photo %}
                             <div class="form-text text-center">Currently using the built-in placeholder.</div>
                         {% endif %}

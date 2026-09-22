@@ -107,7 +107,7 @@
                 {% for other in colleagues %}
                     <article class="team-card">
                         <a class="team-card__media" href="{{ other.get_absolute_url }}" tabindex="-1" aria-hidden="true">
-                            <img src="{{ other.photo_url }}" alt="">
+                            <img src="{{ other.photo_url }}" alt="Portrait of {{ other.name }}">
                         </a>
                         <div class="team-card__body">
                             <h3><a href="{{ other.get_absolute_url }}">{{ other.name }}</a></h3>

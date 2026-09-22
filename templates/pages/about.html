@@ -65,7 +65,7 @@
             {% for member in team %}
                 <article class="team-card">
                     <a class="team-card__media" href="{{ member.get_absolute_url }}" tabindex="-1" aria-hidden="true">
-                        <img src="{{ member.photo_url }}" alt="">
+                        <img src="{{ member.photo_url }}" alt="Portrait of {{ member.name }}">
                     </a>
                     <div class="team-card__body">
                         <h3><a href="{{ member.get_absolute_url }}">{{ member.name }}</a></h3>

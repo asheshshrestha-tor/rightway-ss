@@ -110,7 +110,7 @@ uploaded image is silently dropped.
                     <div class="mb-4">
                         <img id="image-preview"
                              src="{% if object %}{{ object.image_url }}{% else %}{% static 'images/service-placeholder.svg' %}{% endif %}"
-                             alt="" class="w-100 rounded" style="aspect-ratio: 4/3; object-fit: cover">
+                             alt="Service image preview" class="w-100 rounded" style="aspect-ratio: 4/3; object-fit: cover">
                         {% if object and not object.has_uploaded_image %}
                             <div class="form-text">Currently using the built-in placeholder.</div>
                         {% endif %}

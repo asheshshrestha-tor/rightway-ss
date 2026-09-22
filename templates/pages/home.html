@@ -52,7 +52,7 @@
             {% for service in featured_services %}
                 <article class="card">
                     <a class="card__media" href="{{ service.get_absolute_url }}" tabindex="-1" aria-hidden="true">
-                        <img src="{{ service.image_url }}" alt="">
+                        <img src="{{ service.image_url }}" alt="{{ service.title }}">
                     </a>
                     <div class="card__body">
                         <h3><a href="{{ service.get_absolute_url }}">{{ service.title }}</a></h3>

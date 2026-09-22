@@ -114,7 +114,7 @@
                 {% for other in related %}
                     <article class="card">
                         <a class="card__media" href="{{ other.get_absolute_url }}" tabindex="-1" aria-hidden="true">
-                            <img src="{{ other.image_url }}" alt="">
+                            <img src="{{ other.image_url }}" alt="{{ other.title }}">
                         </a>
                         <div class="card__body">
                             <h3><a href="{{ other.get_absolute_url }}">{{ other.title }}</a></h3>

@@ -35,7 +35,7 @@
             {% for service in service_list %}
                 <article class="service-card" id="{{ service.slug }}">
                     <a class="service-card__media" href="{{ service.get_absolute_url }}" tabindex="-1" aria-hidden="true">
-                        <img src="{{ service.image_url }}" alt="">
+                        <img src="{{ service.image_url }}" alt="{{ service.title }}">
                         <span class="service-card__badge">
                             <svg aria-hidden="true"><use href="#i-{{ service.icon }}"></use></svg>
                         </span>
