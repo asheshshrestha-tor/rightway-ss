@@ -346,6 +346,10 @@ TEST_RUNNER = "config.test_runner.RightwayTestRunner"
 TURNSTILE_SITE_KEY = env("TURNSTILE_SITE_KEY", default="")
 TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
 
+# A switch, so Turnstile can be paused without deleting the keys from `.env`.
+# On by default: setting the keys is what turns it on, as before.
+TURNSTILE_ENABLED = env.bool("TURNSTILE_ENABLED", default=True)
+
 # Which hostnames a token may have been issued to. Cloudflare reports the
 # hostname that served the challenge, and checking it is what stops a copy of
 # the page hosted elsewhere from spending tokens against this sitekey. Empty

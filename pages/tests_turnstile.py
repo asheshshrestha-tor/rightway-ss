@@ -42,6 +42,7 @@ def siteverify(**overrides):
 
 
 on = override_settings(
+    TURNSTILE_ENABLED=True,
     TURNSTILE_SITE_KEY=SITE_KEY,
     TURNSTILE_SECRET_KEY=SECRET,
     TURNSTILE_ALLOWED_HOSTNAMES=[],
@@ -65,6 +66,24 @@ class SwitchTests(TestCase):
     @on
     def test_on_with_both(self):
         self.assertTrue(turnstile.is_enabled())
+
+    @on
+    @override_settings(TURNSTILE_ENABLED=False)
+    def test_the_switch_turns_it_off_with_both_keys_set(self):
+        self.assertFalse(turnstile.is_enabled())
+
+    @on
+    @override_settings(TURNSTILE_ENABLED=False)
+    def test_switched_off_the_widget_goes_and_forms_submit_without_a_token(self):
+        page = self.client.get(reverse("contact"))
+        self.assertNotContains(page, "challenges.cloudflare.com")
+
+        without_token = {k: v for k, v in CONTACT.items() if k != turnstile.TOKEN_FIELD}
+        with patch.object(turnstile, "_post") as post:
+            response = self.client.post(reverse("contact"), without_token)
+
+        self.assertRedirects(response, reverse("contact"))
+        post.assert_not_called()
 
 
 class VerifyTests(TestCase):

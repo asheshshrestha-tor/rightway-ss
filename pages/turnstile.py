@@ -70,12 +70,14 @@ class Result:
 
 
 def is_enabled():
-    """True once both keys are configured.
+    """True once both keys are configured, unless TURNSTILE_ENABLED is off.
 
     Both, not either: a sitekey with no secret renders a widget whose token
     nothing checks, which is worse than no widget at all because it looks like
     protection.
     """
+    if not getattr(settings, "TURNSTILE_ENABLED", True):
+        return False
     return bool(settings.TURNSTILE_SITE_KEY and settings.TURNSTILE_SECRET_KEY)
 
 
