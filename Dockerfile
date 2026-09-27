@@ -36,8 +36,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Run at build time so a broken static file fails the build rather than the
-# site. No database is touched, so the default SQLite setting is irrelevant here.
-RUN python manage.py collectstatic --noinput
+# site. No database is touched, but the settings refuse to load without a
+# DB_NAME and `.env` is kept out of the image, so a placeholder is supplied for
+# this one command only.
+RUN DB_NAME=build python manage.py collectstatic --noinput
 
 # Uploads live on a mounted volume in production. These are the fallback paths
 # for running the image without one; anything written here is lost on redeploy.
@@ -52,4 +54,9 @@ EXPOSE 8000
 # `migrate` then runs on every boot: applying nothing is a no-op, so it is safe
 # to repeat, and a deploy carrying a new migration needs no manual step.
 # Keep this to a single replica - concurrent boots would race on migrate.
-CMD ["sh", "-c", "python scripts/wait_for_db.py && python manage.py migrate --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 60 --access-logfile - --error-logfile -"]
+#
+# `collectstatic` runs again here because docker-compose mounts a named volume
+# over /app/staticfiles to share it with nginx. A volume is only filled from
+# the image the first time it is created, so without this every later deploy
+# would keep serving the first deploy's CSS and JS.
+CMD ["sh", "-c", "python scripts/wait_for_db.py && python manage.py migrate --noinput && python manage.py collectstatic --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 60 --access-logfile - --error-logfile -"]

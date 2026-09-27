@@ -16,5 +16,8 @@ staticfiles/
 # Applicant resumes - never commit these
 private-media/
 
+# TLS private keys, mounted into nginx on the server
+certs/
+
 # Database dumps - contain enquiries, applications and consultations
 backups/

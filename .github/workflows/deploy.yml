@@ -1,0 +1,154 @@
+name: CI/CD
+
+# Pull requests run the tests only. A push to main runs the tests and, if they
+# pass, deploys to the EC2 instance. "Run workflow" in the Actions tab does the
+# same by hand, which is how to redeploy without a new commit.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time. A second push waits for the first to finish rather
+# than cancelling it halfway through a `docker compose up`.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # The settings are MySQL-only, so the suite needs a real server. The
+    # official image loads the timezone tables on first boot, which the
+    # dashboard's date-based queries depend on.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          MYSQL_DATABASE: rightway
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-root-password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    # Throwaway values for the service container above. Nothing here is a
+    # real credential. root, because the test runner creates its own database.
+    env:
+      SECRET_KEY: ci-only-not-a-real-secret
+      DB_NAME: rightway
+      DB_USER: root
+      DB_PASSWORD: ci-root-password
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # mysqlclient is a C extension - same packages as the Dockerfile.
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential default-libmysqlclient-dev pkg-config
+
+      - name: Install Python packages
+        run: pip install -r requirements.txt
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        run: python manage.py test
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Set up SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      # `--ff-only` refuses to continue if tracked files were edited on the
+      # server, instead of overwriting them. `.env`, `nginx/` and `certs/` are
+      # untracked there and are left alone.
+      - name: Deploy
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          APP_DIR: ${{ secrets.EC2_APP_DIR }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$EC2_USER@$EC2_HOST" APP_DIR="$APP_DIR" 'bash -se' <<'EOF'
+          set -euo pipefail
+          cd "$APP_DIR"
+
+          git fetch origin main
+          git merge --ff-only origin/main
+          echo "Deploying $(git log -1 --oneline)"
+
+          # Build before touching the running containers, so a failed build
+          # leaves the live site on the previous version.
+          docker compose build web
+          docker compose up -d --remove-orphans
+
+          # nginx looks up `web` once, at start. A recreated web container can
+          # come back on a different address, which shows as 502s until nginx
+          # is restarted. This also picks up edits to nginx/default.conf.
+          docker compose exec -T nginx nginx -t
+          docker compose restart nginx
+
+          # Old image layers fill a small disk quickly.
+          docker image prune -f
+
+          # Migrations and collectstatic run at container start; give them
+          # time, then make sure the container stayed up rather than
+          # crash-looping.
+          sleep 30
+          docker compose ps
+          if [ -z "$(docker compose ps --status running -q web)" ]; then
+            echo "web is not running - last log lines:" >&2
+            docker compose logs --tail 80 web >&2
+            exit 1
+          fi
+          EOF
+
+      # Set the SITE_URL repository variable (e.g. https://example.com.au) to
+      # switch this on.
+      - name: Check the site answers
+        if: vars.SITE_URL != ''
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          curl -fsSL -o /dev/null \
+            --retry 10 --retry-delay 6 --retry-all-errors \
+            -w "HTTP %{http_code} from %{url_effective}\n" \
+            "$SITE_URL"
+
+      - name: Remove the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
