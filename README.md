@@ -124,6 +124,8 @@ The design mockup does not include a Terms page, but its footer links to one, so
   - `context_processors.py` - injects contact details, service list and social
     links into every template for the header and footer
   - `forms.py` - contact enquiry form, including the honeypot spam trap
+  - `ratelimit.py` - daily per-IP and per-email submission limits
+  - `turnstile.py` - Cloudflare Turnstile, and the server-side check behind it
   - `views.py` - one view per page, plus enquiry email delivery
 - `templates/`
   - `base.html` - page shell (head, header, main, CTA band, footer)
@@ -197,6 +199,35 @@ EMAIL_BACKEND=config.ses_backend.SESEmailBackend
 
 [Docs/email.md](Docs/email.md) lists every email the site sends, the SES
 setup checklist, and the SMTP alternative.
+
+## Spam protection
+
+Four layers across all three public forms — enquiry, consultation and job
+application. [Docs/form-protection.md](Docs/form-protection.md) covers the
+pipeline; the short version:
+
+| Layer | Applies to |
+|---|---|
+| Daily rate limit — 3 submissions per day, per IP and per email | All three |
+| Server-side validation | All three |
+| Cloudflare Turnstile | All three |
+| Honeypot (quarantines, never rejects) | Contact only |
+
+The rate limit counts per form, so applying for three roles does not use up the
+allowance for asking a question. Counters live in the `django_cache` table,
+created by migration `pages/0015_cache_table.py`.
+
+Turnstile stays switched off until both keys are set, so a fresh clone and the
+test suite run with no Cloudflare account involved:
+
+```ini
+TURNSTILE_SITE_KEY=0x4AAAAAAFAluGVoc-gZgkNN
+TURNSTILE_SECRET_KEY=...
+```
+
+The sitekey is public; the secret belongs in `.env` or the hosting panel and
+nowhere else. Every token is verified server side - the widget on its own
+protects nothing. See [Docs/turnstile.md](Docs/turnstile.md).
 
 ## Staff dashboard
 
@@ -576,6 +607,8 @@ Whatever the host, it needs:
   `SECURE_SSL_REDIRECT` loops forever.
 - MySQL's **timezone tables loaded** — see [Docs/mysql.md](Docs/mysql.md).
 - Real SMTP settings. The console backend sends nothing.
+- `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`, or the public forms go out
+  with no bot protection — see [Docs/turnstile.md](Docs/turnstile.md).
 
 ## Before going live
 

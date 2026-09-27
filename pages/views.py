@@ -10,21 +10,14 @@ from django.http import HttpResponse
 from . import content
 from . import consultation_mail
 from . import notifications
+from . import ratelimit
 from . import structured_data
+from . import turnstile
 from .forms import ApplicationForm, ConsultationForm, ContactForm
 from .models import Consultation, Enquiry, Service, SiteSettings, TeamMember, Vacancy
 
 logger = logging.getLogger(__name__)
 
-# -------------------------------------------------------------------
-# Contact form rate limits
-# -------------------------------------------------------------------
-
-CONTACT_IP_LIMIT = 3
-CONTACT_IP_TIMEOUT = 60 * 10       # 10 minutes
-
-CONTACT_EMAIL_LIMIT = 3
-CONTACT_EMAIL_TIMEOUT = 60 * 60    # 1 hour
 
 def home(request):
     return render(
@@ -159,12 +152,36 @@ def speculative_application(request):
 
 
 def _application_page(request, *, vacancy, template, extra):
+    landing = vacancy.get_absolute_url() if vacancy else reverse("apply")
+
     if vacancy is not None and not vacancy.accepts_applications:
         # Advert still visible, but the form is not offered.
         form = None
     elif request.method == "POST":
-        form = ApplicationForm(request.POST, request.FILES)
+        client_ip = get_client_ip(request)
+
+        # Before the form is built, so a flood is turned away before Django
+        # parses the multipart body and writes the resume to storage.
+        if ratelimit.is_over_limit(ratelimit.APPLICATION, ip=client_ip):
+            return _too_many(
+                request, ratelimit.APPLICATION, redirect_to=landing, ip=client_ip
+            )
+
+        form = ApplicationForm(request.POST, request.FILES, request=request)
         if form.is_valid():
+            email = form.cleaned_data["email"].strip().lower()
+
+            if ratelimit.is_over_limit(ratelimit.APPLICATION, email=email):
+                return _too_many(
+                    request,
+                    ratelimit.APPLICATION,
+                    redirect_to=landing,
+                    ip=client_ip,
+                    email=email,
+                )
+
+            ratelimit.record(ratelimit.APPLICATION, ip=client_ip, email=email)
+
             application = form.save(commit=False)
             application.vacancy = vacancy
             application.vacancy_title = vacancy.title if vacancy else ""
@@ -174,231 +191,103 @@ def _application_page(request, *, vacancy, template, extra):
                 request,
                 "Thank you for applying. We'll be in touch about the next steps.",
             )
-            return redirect(
-                vacancy.get_absolute_url() if vacancy else reverse("apply")
-            )
+            return redirect(landing)
         messages.error(request, "Please check the highlighted fields and try again.")
     else:
-        form = ApplicationForm()
+        form = ApplicationForm(request=request)
 
     return render(request, template, {"vacancy": vacancy, "form": form, **extra})
 
 def get_client_ip(request):
+    """The visitor's address, behind Cloudflare or not.
+
+    One definition, shared with Turnstile: the rate limiter and `remoteip` on
+    the siteverify call have to agree about who the client is, or the two
+    protections are counting different people.
     """
-    Get the real client IP when the site is behind Cloudflare.
+    return turnstile.client_ip(request) or "unknown"
 
-    CF-Connecting-IP is supplied by Cloudflare and is preferred over
-    X-Forwarded-For.
+
+def _too_many(request, scope, *, redirect_to, ip, email=None):
+    """Turn a visitor away, having hit the daily limit on this form.
+
+    Always with the phone number: the limit exists to stop a flood, not to
+    stop someone reaching an NDIS provider, and several people can share one
+    address - an office, a group home, a mobile network. Anyone caught by it
+    needs a way through that does not involve waiting a day.
     """
-
-    cloudflare_ip = request.META.get("HTTP_CF_CONNECTING_IP")
-
-    if cloudflare_ip:
-        return cloudflare_ip.strip()
-
-    # Fallback for local development / direct requests.
-    return request.META.get("REMOTE_ADDR", "").strip()
-
-def get_rate_limit_key(prefix, value):
-    """
-    Generate a consistent cache key.
-    """
-    return f"contact:{prefix}:{value}"
-
-import logging
-
-from django.contrib import messages
-from django.core.cache import cache
-from django.shortcuts import redirect, render
-
-from .forms import ContactForm
-from .models import Enquiry
-from . import notifications
-
-
-logger = logging.getLogger(__name__)
-
-
-# -------------------------------------------------------------------
-# Contact form rate limits
-# -------------------------------------------------------------------
-
-CONTACT_IP_LIMIT = 3
-CONTACT_IP_TIMEOUT = 60 * 10       # 10 minutes
-
-CONTACT_EMAIL_LIMIT = 3
-CONTACT_EMAIL_TIMEOUT = 60 * 60    # 1 hour
-
-
-def get_client_ip(request):
-    """
-    Get the real client IP when the site is behind Cloudflare.
-
-    CF-Connecting-IP is supplied by Cloudflare and is preferred over
-    X-Forwarded-For.
-    """
-
-    cloudflare_ip = request.META.get("HTTP_CF_CONNECTING_IP")
-
-    if cloudflare_ip:
-        return cloudflare_ip.strip()
-
-    # Fallback for local development / direct requests.
-    return request.META.get("REMOTE_ADDR", "").strip()
-
-
-def get_rate_limit_key(prefix, value):
-    """
-    Generate a consistent cache key.
-    """
-    return f"contact:{prefix}:{value}"
+    ratelimit.blocked(scope, ip=ip, email=email)
+    phone = SiteSettings.load().phone or settings.CONSULTATION_PHONE
+    messages.error(request, ratelimit.LIMIT_MESSAGE % phone)
+    return redirect(redirect_to)
 
 
 def contact(request):
+    """The enquiry form.
+
+    Four things guard it, in increasing cost: the daily limit (a cache read),
+    field validation, Turnstile (one call to Cloudflare, in the form's clean),
+    and the honeypot. Order matters - the cheap checks come first so a flood
+    is turned away without touching the database or the network.
+    """
     if request.method == "POST":
-
-        # -----------------------------------------------------------
-        # 1. Identify client
-        # -----------------------------------------------------------
-
         client_ip = get_client_ip(request)
 
-        if not client_ip:
-            client_ip = "unknown"
-
-        # -----------------------------------------------------------
-        # 2. IP rate limit
-        #
-        # Maximum 3 valid submissions from the same IP
-        # within 10 minutes.
-        # -----------------------------------------------------------
-
-        ip_key = get_rate_limit_key("ip", client_ip)
-
-        ip_count = cache.get(ip_key, 0)
-
-        if ip_count >= CONTACT_IP_LIMIT:
-            logger.warning(
-                "Contact form IP rate limit exceeded: ip=%s",
-                client_ip,
+        # Checked before validation because it costs one cache read and needs
+        # nothing from the visitor.
+        if ratelimit.is_over_limit(ratelimit.CONTACT, ip=client_ip):
+            return _too_many(
+                request, ratelimit.CONTACT, redirect_to="contact", ip=client_ip
             )
 
-            messages.error(
-                request,
-                "Too many submissions. Please try again later.",
-            )
-
-            return redirect("contact")
-
-        # -----------------------------------------------------------
-        # 3. Validate form
-        # -----------------------------------------------------------
-
-        form = ContactForm(request.POST)
+        form = ContactForm(request.POST, request=request)
 
         if form.is_valid():
-
             email = form.cleaned_data["email"].strip().lower()
 
-            # -------------------------------------------------------
-            # 4. Email rate limit
-            #
-            # Maximum 3 submissions from the same email
-            # within 1 hour.
-            # -------------------------------------------------------
-
-            email_key = get_rate_limit_key("email", email)
-
-            email_count = cache.get(email_key, 0)
-
-            if email_count >= CONTACT_EMAIL_LIMIT:
-                logger.warning(
-                    "Contact form email rate limit exceeded: "
-                    "email=%s ip=%s",
-                    email,
-                    client_ip,
-                )
-
-                messages.error(
+            # Only now is there an email address to check.
+            if ratelimit.is_over_limit(ratelimit.CONTACT, email=email):
+                return _too_many(
                     request,
-                    "Too many submissions. Please try again later.",
+                    ratelimit.CONTACT,
+                    redirect_to="contact",
+                    ip=client_ip,
+                    email=email,
                 )
 
-                return redirect("contact")
-
-            # -------------------------------------------------------
-            # 5. Count this submission
-            #
-            # Do this BEFORE spam handling so that someone who keeps
-            # triggering the honeypot cannot continuously hit the
-            # endpoint.
-            # -------------------------------------------------------
-
-            cache.set(
-                ip_key,
-                ip_count + 1,
-                CONTACT_IP_TIMEOUT,
-            )
-
-            cache.set(
-                email_key,
-                email_count + 1,
-                CONTACT_EMAIL_TIMEOUT,
-            )
-
-            # -------------------------------------------------------
-            # 6. Spam / honeypot check
-            # -------------------------------------------------------
+            # Counted before the honeypot is consulted, so that tripping the
+            # trap over and over still uses up the sender's allowance.
+            ratelimit.record(ratelimit.CONTACT, ip=client_ip, email=email)
 
             spam = form.is_probably_spam()
-
-            if spam:
-                logger.warning(
-                    "Contact form spam blocked: ip=%s email=%s",
-                    client_ip,
-                    email,
-                )
-
-                # IMPORTANT:
-                # Do NOT create an Enquiry record.
-                # Do NOT send SES email.
-                #
-                # We still show the attacker a normal success message
-                # so they don't know that the honeypot detected them.
-
-                messages.success(
-                    request,
-                    "Thank you for getting in touch. "
-                    "We'll respond within one business day.",
-                )
-
-                return redirect("contact")
-
-            # -------------------------------------------------------
-            # 7. Legitimate enquiry
-            # -------------------------------------------------------
 
             enquiry = Enquiry.objects.create(
                 name=form.cleaned_data["name"],
                 email=email,
                 phone=form.cleaned_data["phone"],
                 message=form.cleaned_data["message"],
-                status=Enquiry.Status.NEW,
+                status=Enquiry.Status.SPAM if spam else Enquiry.Status.NEW,
             )
 
-            # -------------------------------------------------------
-            # 8. Send notification through SES
-            # -------------------------------------------------------
+            if spam:
+                # Quarantined, not discarded. The honeypot can misfire on a
+                # real person - a browser autofilling a hidden field - and a
+                # dropped message from someone asking about disability support
+                # is not recoverable. It is kept out of the dashboard's lists
+                # and counts until a staff member looks at the spam folder and
+                # says otherwise.
+                logger.warning(
+                    "Contact form honeypot tripped, quarantined as #%s: ip=%s email=%s",
+                    enquiry.pk,
+                    client_ip,
+                    email,
+                )
+            else:
+                notifications.enquiry_received(request, enquiry)
 
-            notifications.enquiry_received(
-                request,
-                enquiry,
-            )
-
-            # -------------------------------------------------------
-            # 9. Success
-            # -------------------------------------------------------
-
+            # The same words either way. A bot that is told it was caught
+            # learns to avoid the trap; a person whose message was wrongly
+            # flagged is not left thinking it failed to send.
             messages.success(
                 request,
                 "Thank you for getting in touch. "
@@ -407,20 +296,12 @@ def contact(request):
 
             return redirect("contact")
 
-        # -----------------------------------------------------------
-        # Invalid form
-        # -----------------------------------------------------------
-
         messages.error(
             request,
             "Please check the highlighted fields and try again.",
         )
 
     else:
-        # -----------------------------------------------------------
-        # GET request
-        # -----------------------------------------------------------
-
         initial = {}
 
         role = request.GET.get("role")
@@ -430,7 +311,7 @@ def contact(request):
                 f"I would like to apply for the {role} position."
             )
 
-        form = ContactForm(initial=initial)
+        form = ContactForm(initial=initial, request=request)
 
     return render(
         request,
@@ -447,8 +328,33 @@ def consultation(request):
     their availability and staff confirm the exact time.
     """
     if request.method == "POST":
-        form = ConsultationForm(request.POST)
+        client_ip = get_client_ip(request)
+
+        if ratelimit.is_over_limit(ratelimit.CONSULTATION, ip=client_ip):
+            return _too_many(
+                request,
+                ratelimit.CONSULTATION,
+                redirect_to="consultation",
+                ip=client_ip,
+            )
+
+        form = ConsultationForm(request.POST, request=request)
         if form.is_valid():
+            email = form.cleaned_data["email"].strip().lower()
+
+            if ratelimit.is_over_limit(ratelimit.CONSULTATION, email=email):
+                return _too_many(
+                    request,
+                    ratelimit.CONSULTATION,
+                    redirect_to="consultation",
+                    ip=client_ip,
+                    email=email,
+                )
+
+            # A consultation costs the most to process of the three: a row,
+            # three emails, and staff time to confirm a slot.
+            ratelimit.record(ratelimit.CONSULTATION, ip=client_ip, email=email)
+
             booking = form.save()
             consultation_mail.acknowledge(booking)
             notifications.consultation_requested(request, booking)
@@ -456,7 +362,7 @@ def consultation(request):
             return redirect("consultation_booked")
         messages.error(request, "Please check the highlighted fields and try again.")
     else:
-        form = ConsultationForm(initial=_consultation_initial(request))
+        form = ConsultationForm(initial=_consultation_initial(request), request=request)
 
     return render(
         request,

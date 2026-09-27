@@ -41,6 +41,8 @@ resume is silently dropped.
                 </div>
             {% endfor %}
 
+            {% include "pages/partials/turnstile.html" with action="job-application" %}
+
             <button class="btn btn--primary btn--block" type="submit">
                 Submit Application
                 <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>

@@ -1,0 +1,36 @@
+{% comment %}
+Cloudflare Turnstile widget. Include once, inside the <form>, just above the
+submit button:
+
+    {% include "pages/partials/turnstile.html" with action="contact" %}
+
+`action` must match the form's `turnstile_action` in pages/forms.py. The server
+compares the two, so a mismatch rejects every submission of that form - they
+are changed together or not at all.
+
+The script injects its own <input name="cf-turnstile-response"> into the div,
+which is where pages/turnstile.py reads the token from. Nothing here proves
+anything on its own: the token is only worth what siteverify says it is.
+
+Renders nothing until both keys are configured, so local development and the
+test suite are unaffected.
+{% endcomment %}
+{% if turnstile_site_key %}
+    <div class="field turnstile">
+        <div class="cf-turnstile"
+             data-sitekey="{{ turnstile_site_key }}"
+             data-action="{{ action }}"
+             data-size="flexible"
+             data-theme="light"
+             data-retry="auto"
+             data-refresh-expired="auto"></div>
+        <noscript>
+            <p class="field-help">
+                This form needs JavaScript to confirm you are human. Please turn
+                it on, or call us on <a href="{{ site.phone_href }}">{{ site.phone }}</a>
+                and we will take your details over the phone.
+            </p>
+        </noscript>
+    </div>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}

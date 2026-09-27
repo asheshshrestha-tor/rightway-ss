@@ -94,6 +94,8 @@
                     {% endif %}
                 {% endfor %}
 
+                {% include "pages/partials/turnstile.html" with action="contact" %}
+
                 <button class="btn btn--primary btn--block" type="submit">
                     Send Message
                     <svg class="arrow" aria-hidden="true"><use href="#i-arrow-right"></use></svg>

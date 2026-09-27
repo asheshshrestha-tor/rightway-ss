@@ -1,16 +1,23 @@
 """Expose site-wide content to every template (header, footer, nav menus)."""
 
-from . import structured_data
+from django.conf import settings
+
+from . import structured_data, turnstile
 from .models import Service, SiteSettings, SocialLink
 
 
 def site(request):
     settings_row = SiteSettings.load()
 
+    # The Turnstile sitekey is public - it is meant to be read out of the page.
+    # Empty until both keys are configured, which is what makes the widget
+    # partial render nothing on a fresh clone or under test.
+    turnstile_site_key = settings.TURNSTILE_SITE_KEY if turnstile.is_enabled() else ""
+
     # The dashboard has its own chrome and never renders the public nav or
     # footer, so skip the service and social queries for those requests.
     if request.path.startswith("/dashboard/"):
-        return {"site": settings_row}
+        return {"site": settings_row, "turnstile_site_key": turnstile_site_key}
 
     published = Service.objects.published()
     social = SocialLink.objects.published()
@@ -21,6 +28,7 @@ def site(request):
 
     return {
         "site": settings_row,
+        "turnstile_site_key": turnstile_site_key,
         "nav_services": published,
         "footer_services": published.filter(show_in_footer=True),
         "social_links": social,

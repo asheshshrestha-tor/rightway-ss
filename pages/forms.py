@@ -1,10 +1,14 @@
+import logging
 import os
 
 from django import forms
 from django.conf import settings
 
+from . import turnstile
 from .consultation_models import next_business_day
 from .models import Application, Consultation, Service
+
+logger = logging.getLogger(__name__)
 
 # Honeypot field name. Deliberately meaningless: names like "website", "url" or
 # "company" are standard browser-autofill tokens, and browsers fill them even
@@ -14,13 +18,69 @@ from .models import Application, Consultation, Service
 HONEYPOT_FIELD = "hp_reference"
 
 
-class ContactForm(forms.Form):
+class TurnstileFormMixin:
+    """Verifies the Cloudflare Turnstile token that came with this submission.
+
+    Mix in before the form class, so `clean` runs. Each form sets its own
+    `turnstile_action`, which must match the `data-action` the widget was
+    rendered with - that is what stops a token minted on one page being spent
+    on another.
+
+    The token is not a declared field. The Turnstile script injects its own
+    `<input name="cf-turnstile-response">` into the widget's container, so the
+    form reads it straight out of the posted data; declaring a field as well
+    would put two inputs of that name in the page and the browser would post
+    both.
+
+    Unlike the honeypot, which quarantines quietly because a false positive
+    there is an autofill quirk, a failed Turnstile check is shown to the
+    visitor as a form error. Turnstile offers a retry; a silent drop would
+    leave someone who simply had JavaScript blocked with no way to tell.
+    """
+
+    #: The `data-action` this form's widget is rendered with. Required.
+    turnstile_action = None
+
+    def __init__(self, *args, request=None, **kwargs):
+        self.request = request
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+
+        if not turnstile.is_enabled():
+            return cleaned
+
+        result = turnstile.verify(
+            self.data.get(turnstile.TOKEN_FIELD, ""),
+            action=self.turnstile_action,
+            remoteip=turnstile.client_ip(self.request) if self.request else None,
+        )
+
+        if not result.ok:
+            # The visitor gets one plain sentence; the detail goes to the log,
+            # where it is the only way to tell a misconfigured action or
+            # hostname apart from ordinary bot traffic.
+            logger.warning(
+                "Turnstile rejected a %s submission: %s (error-codes=%s)",
+                self.turnstile_action,
+                result.reason,
+                ", ".join(result.error_codes) or "none",
+            )
+            raise forms.ValidationError(turnstile.FAILURE_MESSAGE)
+
+        return cleaned
+
+
+class ContactForm(TurnstileFormMixin, forms.Form):
     """Enquiry form shown on the Contact page.
 
     The honeypot field is hidden from people by CSS. Anything that fills it is
     probably a bot - but a false positive must never block a real enquiry, so
     tripping it does not invalidate the form. See `is_probably_spam`.
     """
+
+    turnstile_action = "contact"
 
     name = forms.CharField(
         label="Your Name",
@@ -80,13 +140,15 @@ class ContactForm(forms.Form):
 
 
 
-class ApplicationForm(forms.ModelForm):
+class ApplicationForm(TurnstileFormMixin, forms.ModelForm):
     """Public job application, with a resume upload.
 
     File validation is deliberate rather than left to the browser: `accept` on
     the input is a hint a client can ignore, so extension and size are checked
     server side too.
     """
+
+    turnstile_action = "job-application"
 
     class Meta:
         model = Application
@@ -139,7 +201,7 @@ class ApplicationForm(forms.ModelForm):
         return resume
 
 
-class ConsultationForm(forms.ModelForm):
+class ConsultationForm(TurnstileFormMixin, forms.ModelForm):
     """Request the free consultation the site advertises.
 
     Validation encodes promises the site already makes:
@@ -149,6 +211,8 @@ class ConsultationForm(forms.ModelForm):
       * home visits are only offered around Toowoomba, so a suburb is required
         to know whether the visit is even possible
     """
+
+    turnstile_action = "consultation"
 
     class Meta:
         model = Consultation

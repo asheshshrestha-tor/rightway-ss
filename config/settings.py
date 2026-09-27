@@ -324,3 +324,33 @@ CACHES = {
         "LOCATION": "django_cache",
     }
 }
+
+# --- Cloudflare Turnstile --------------------------------------------------
+# Bot protection on the three public forms: the enquiry form, the consultation
+# request and the job application. The widget in the page is only half of it -
+# every token is checked server side against Cloudflare's siteverify API by
+# pages/turnstile.py, because a token nothing verifies protects nothing.
+#
+# Both keys must be set for it to switch on. The sitekey is public and belongs
+# in the page; the secret never leaves the server and never goes in git. Get a
+# fresh secret from the Cloudflare dashboard (Turnstile -> the widget ->
+# Settings) or with `wrangler turnstile widget secret <sitekey>`, and put it in
+# `.env` or the hosting panel's environment - nowhere else.
+#
+# Leaving them empty disables Turnstile entirely, which is what a fresh clone,
+# the test suite and local development want.
+# Blanked for the whole test run by config/test_runner.py, so the suite never
+# depends on what is in a developer's .env and never calls Cloudflare.
+TEST_RUNNER = "config.test_runner.RightwayTestRunner"
+
+TURNSTILE_SITE_KEY = env("TURNSTILE_SITE_KEY", default="")
+TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY", default="")
+
+# Which hostnames a token may have been issued to. Cloudflare reports the
+# hostname that served the challenge, and checking it is what stops a copy of
+# the page hosted elsewhere from spending tokens against this sitekey. Empty
+# means "derive it from ALLOWED_HOSTS", which is right almost always; set it
+# only when tokens are legitimately issued somewhere ALLOWED_HOSTS does not
+# list. An empty result turns the check off rather than rejecting everything,
+# so local development keeps working.
+TURNSTILE_ALLOWED_HOSTNAMES = env.list("TURNSTILE_ALLOWED_HOSTNAMES", default=[])
